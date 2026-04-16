@@ -6,43 +6,14 @@ A MySQL-protocol proxy that sits in front of your existing MySQL database, inter
 
 ## Quick Start
 
-The fastest path to a running instance is Docker Compose. The example below starts vdb-mysql alongside a MySQL 8 source database.
+The fastest path to a running instance is Docker Compose. The example below connects vdb-mysql to your existing MySQL 8 source database.
 
-**1. Create the source database users**
+> **Prerequisite**: vdb-mysql needs a dedicated read-only MySQL account on your source database to fetch schema and row data. See [Source Database Setup](#source-database-setup) for the one-time SQL needed to create it.
 
-Run the following against your MySQL source before starting vdb-mysql:
-
-```sql
--- Read-only account used by vdb-mysql to fetch schema and row data
-CREATE USER IF NOT EXISTS 'vdb_user'@'%' IDENTIFIED BY 'vdbuserpass';
-GRANT SELECT ON myapp.* TO 'vdb_user'@'%';
-
--- Application account used by your app to connect through vdb-mysql
-CREATE USER IF NOT EXISTS 'myapp_user'@'%' IDENTIFIED BY 'myapppass';
-GRANT ALL PRIVILEGES ON myapp.* TO 'myapp_user'@'%';
-
-FLUSH PRIVILEGES;
-```
-
-**2. Create a `docker-compose.yml`**
+**1. Create a `docker-compose.yml`**
 
 ```yaml
 services:
-
-  source-db:
-    image: mysql:8.0
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: myapp
-    volumes:
-      - db-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-prootpassword", "--silent"]
-      interval: 2s
-      timeout: 5s
-      retries: 30
-      start_period: 10s
 
   vdb:
     image: ghcr.io/anqordx/vdb-mysql:latest
@@ -50,28 +21,22 @@ services:
     environment:
       VDB_LISTEN_ADDR: ":3306"
       VDB_DB_NAME: myapp
-      VDB_SOURCE_DSN: "vdb_user:vdbuserpass@tcp(source-db:3306)/myapp"
-      VDB_AUTH_SOURCE_ADDR: "source-db:3306"
+      VDB_SOURCE_DSN: "vdb_user:<vdb-user-password>@tcp(<your-mysql-host>:3306)/myapp"
+      VDB_AUTH_SOURCE_ADDR: "<your-mysql-host>:3306"
     ports:
       - "3306:3306"
-    depends_on:
-      source-db:
-        condition: service_healthy
-
-volumes:
-  db-data:
 ```
 
-**3. Start**
+**2. Start**
 
 ```
 docker compose up -d
 ```
 
-**4. Connect**
+**3. Connect**
 
 ```
-mysql -h 127.0.0.1 -P 3306 -u myapp_user -pmyapppass myapp
+mysql -h 127.0.0.1 -P 3306 -u <your-existing-user> -p<password> myapp
 ```
 
 Your application now connects to vdb-mysql on port 3306 exactly as it would connect to MySQL directly. The source database remains on its original port and is not exposed to your application.
@@ -140,7 +105,7 @@ vdb-mysql speaks standard MySQL protocol. Any client that works with MySQL 8.x w
 **mysql CLI**
 
 ```
-mysql -h 127.0.0.1 -P 3306 -u myapp_user -pmyapppass myapp
+mysql -h 127.0.0.1 -P 3306 -u <your-user> -p<password> <your-database>
 ```
 
 **Go (`database/sql`)**
@@ -148,7 +113,7 @@ mysql -h 127.0.0.1 -P 3306 -u myapp_user -pmyapppass myapp
 ```go
 import _ "github.com/go-sql-driver/mysql"
 
-db, err := sql.Open("mysql", "myapp_user:myapppass@tcp(127.0.0.1:3306)/myapp")
+db, err := sql.Open("mysql", "<your-user>:<password>@tcp(127.0.0.1:3306)/<your-database>")
 ```
 
 **Python**
@@ -157,8 +122,8 @@ db, err := sql.Open("mysql", "myapp_user:myapppass@tcp(127.0.0.1:3306)/myapp")
 import mysql.connector
 conn = mysql.connector.connect(
     host="127.0.0.1", port=3306,
-    user="myapp_user", password="myapppass",
-    database="myapp"
+    user="<your-user>", password="<password>",
+    database="<your-database>"
 )
 ```
 
@@ -172,11 +137,9 @@ conn = mysql.connector.connect(
 
 ## Source Database Setup
 
-vdb-mysql requires two MySQL accounts on the source database.
-
 ### Service account (vdb-mysql → source)
 
-vdb-mysql uses this account to read schema metadata and row data. It must have `SELECT` only — this enforces at the database layer that vdb-mysql can never write to the source, regardless of what any plugin does.
+Before running vdb-mysql, create a dedicated read-only MySQL account for it on your source database. This account is used only by vdb-mysql to read schema metadata and row data. Granting `SELECT` only enforces at the database layer that vdb-mysql can never write to the source, regardless of what any plugin does.
 
 ```sql
 CREATE USER IF NOT EXISTS 'vdb_user'@'%' IDENTIFIED BY '<password>';
@@ -184,15 +147,7 @@ GRANT SELECT ON <your_database>.* TO 'vdb_user'@'%';
 FLUSH PRIVILEGES;
 ```
 
-### Application account (your app → vdb-mysql)
-
-Your application connects to the vdb-mysql endpoint using this account. vdb-mysql proxies the authentication handshake to the source on every connection — it does not maintain its own user list.
-
-```sql
-CREATE USER IF NOT EXISTS 'myapp_user'@'%' IDENTIFIED BY '<password>';
-GRANT ALL PRIVILEGES ON <your_database>.* TO 'myapp_user'@'%';
-FLUSH PRIVILEGES;
-```
+Use the credentials from this account in `VDB_SOURCE_DSN`. Your application users on the source database do not need to change — vdb-mysql proxies the authentication handshake to the source on every client connection and does not maintain its own user list.
 
 ### Network access
 
