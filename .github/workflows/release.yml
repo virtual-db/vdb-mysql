@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*.*.*'
 
+env:
+  GOPRIVATE: github.com/AnqorDX/*
+
 jobs:
   test:
     name: Test

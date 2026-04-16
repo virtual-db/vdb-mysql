@@ -4,7 +4,7 @@ go 1.23.3
 
 require (
 	github.com/AnqorDX/vdb-core v0.0.1-alpha.1
-	github.com/AnqorDX/vdb-mysql-driver v0.0.1-alpha.2
+	github.com/AnqorDX/vdb-mysql-driver v0.0.1-alpha.1
 )
 
 require (
