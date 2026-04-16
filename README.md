@@ -6,7 +6,9 @@ A MySQL-protocol proxy that sits in front of your existing MySQL database, inter
 
 ## Quick Start
 
-The fastest path to a running instance is Docker Compose. The example below connects vdb-mysql to your existing MySQL 8 source database.
+> **Note**: An official Docker image is planned but has not been published yet. In the meantime, you can [build your own Docker image](#building-your-own-docker-image) or use a [pre-built binary](#pre-built-binary).
+
+The example below shows how vdb-mysql can be deployed with Docker Compose once an image is available.
 
 > **Prerequisite**: vdb-mysql needs a dedicated read-only MySQL account on your source database to fetch schema and row data. See [Source Database Setup](#source-database-setup) for the one-time SQL needed to create it.
 
@@ -56,13 +58,7 @@ Your application now connects to vdb-mysql on port 3306 exactly as it would conn
 
 ### Docker image
 
-A pre-built image is available from the GitHub Container Registry:
-
-```
-docker pull ghcr.io/anqordx/vdb-mysql:latest
-```
-
-Images are tagged by release version (e.g. `ghcr.io/anqordx/vdb-mysql:v0.1.0`) and `latest` always points to the most recent stable release.
+> **Coming soon**: An official Docker image is planned for a future release. It will be published to the GitHub Container Registry at `ghcr.io/anqordx/vdb-mysql`. Until then, you can [build your own Docker image](#building-your-own-docker-image).
 
 ### Pre-built binary
 
