@@ -10,8 +10,6 @@ github.com/AnqorDX/vdb-core v0.0.1-alpha.1 h1:dI6uglVPKzcp0+4GtUasAbgGfsCID3mxYq
 github.com/AnqorDX/vdb-core v0.0.1-alpha.1/go.mod h1:G2KpYyoT+l8BR00xcUi2qZdrE8otS8lFHKb0nPYWQi4=
 github.com/AnqorDX/vdb-mysql-driver v0.0.1-alpha.1 h1:xhViNK1AoXkPlPq9b2UNTY1BjEYSEoWnZ0pcS2Zn0vU=
 github.com/AnqorDX/vdb-mysql-driver v0.0.1-alpha.1/go.mod h1:D/XTq2kn25Ag1saWMNG1gfIroJgjE+OX8xwId2F+lIg=
-github.com/AnqorDX/vdb-mysql-driver v0.0.1-alpha.2 h1:vbtCfocXUCZuPF89DBZ/e2TaHKaFmhmczamKQipKn5U=
-github.com/AnqorDX/vdb-mysql-driver v0.0.1-alpha.2/go.mod h1:D/XTq2kn25Ag1saWMNG1gfIroJgjE+OX8xwId2F+lIg=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
