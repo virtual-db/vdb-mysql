@@ -18,7 +18,7 @@ The example below shows how vdb-mysql can be deployed with Docker Compose once a
 services:
 
   vdb:
-    image: ghcr.io/anqordx/vdb-mysql:latest
+    image: ghcr.io/virtual-db/mysql:latest
     restart: unless-stopped
     environment:
       VDB_LISTEN_ADDR: ":3306"
@@ -58,14 +58,14 @@ Your application now connects to vdb-mysql on port 3306 exactly as it would conn
 
 ### Docker image
 
-> **Coming soon**: An official Docker image is planned for a future release. It will be published to the GitHub Container Registry at `ghcr.io/anqordx/vdb-mysql`. Until then, you can [build your own Docker image](#building-your-own-docker-image).
+> **Coming soon**: An official Docker image is planned for a future release. It will be published to the GitHub Container Registry at `ghcr.io/virtual-db/mysql`. Until then, you can [build your own Docker image](#building-your-own-docker-image).
 
 ### Pre-built binary
 
-Linux/amd64 binaries are attached to every tagged [release](https://github.com/AnqorDX/vdb-mysql/releases):
+Linux/amd64 binaries are attached to every tagged [release](https://github.com/virtual-db/mysql/releases):
 
 ```
-curl -Lo vdb-mysql https://github.com/AnqorDX/vdb-mysql/releases/latest/download/vdb-mysql-linux-amd64
+curl -Lo vdb-mysql https://github.com/virtual-db/mysql/releases/latest/download/vdb-mysql-linux-amd64
 chmod +x vdb-mysql
 ```
 
@@ -74,8 +74,8 @@ chmod +x vdb-mysql
 All dependencies are published to the public Go module proxy:
 
 ```
-git clone https://github.com/AnqorDX/vdb-mysql
-cd vdb-mysql
+git clone https://github.com/virtual-db/mysql
+cd mysql
 CGO_ENABLED=0 go build -trimpath -o vdb-mysql .
 ```
 
@@ -83,11 +83,11 @@ CGO_ENABLED=0 go build -trimpath -o vdb-mysql .
 
 ```dockerfile
 FROM golang:1.23-alpine AS builder
-RUN CGO_ENABLED=0 go install github.com/AnqorDX/vdb-mysql@latest
+RUN CGO_ENABLED=0 go install github.com/virtual-db/mysql@latest
 
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates
-COPY --from=builder /go/bin/vdb-mysql /usr/local/bin/vdb-mysql
+COPY --from=builder /go/bin/mysql /usr/local/bin/vdb-mysql
 EXPOSE 3306
 ENTRYPOINT ["/usr/local/bin/vdb-mysql"]
 ```
@@ -218,7 +218,7 @@ Set `VDB_PLUGIN_DIR` to a directory containing one subdirectory per plugin:
 
 On startup, vdb-mysql scans `VDB_PLUGIN_DIR`, launches each plugin, and waits up to 10 seconds for it to connect and send a `declare` notification registering its pipeline handlers and event subscriptions. Plugins that fail to start or declare in time are logged and skipped.
 
-Plugin development documentation and the JSON-RPC protocol specification are maintained in the [vdb-core](https://github.com/AnqorDX/vdb-core) repository.
+Plugin development documentation and the JSON-RPC protocol specification are maintained in the [vdb-core](https://github.com/virtual-db/vdb-core) repository.
 
 ---
 
