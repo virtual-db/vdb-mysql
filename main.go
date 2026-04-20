@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	core "github.com/AnqorDX/vdb-core"
-	mysqldriver "github.com/AnqorDX/vdb-mysql-driver"
+	core "github.com/virtual-db/vdb-core"
+	mysqldriver "github.com/virtual-db/mysql-driver"
 )
 
 func main() {
