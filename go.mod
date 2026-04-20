@@ -3,14 +3,14 @@ module github.com/virtual-db/mysql
 go 1.23.3
 
 require (
-	github.com/virtual-db/vdb-core v0.0.1-alpha-1
-	github.com/virtual-db/mysql-driver v0.0.1-alpha-1
+	github.com/virtual-db/core v0.0.1-alpha.2
+	github.com/virtual-db/mysql-driver v0.0.1-alpha.2
 )
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/virtual-db/dispatch v0.0.1-alpha-1 // indirect
-	github.com/virtual-db/pipeline v0.0.1-alpha-1 // indirect
+	github.com/AnqorDX/dispatch v0.0.1-alpha-1 // indirect
+	github.com/AnqorDX/pipeline v0.0.1-alpha-1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/dolthub/flatbuffers/v23 v23.3.3-dh.2 // indirect
 	github.com/dolthub/go-icu-regex v0.0.0-20250327004329-6799764f2dad // indirect

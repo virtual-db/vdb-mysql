@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	core "github.com/virtual-db/vdb-core"
+	core "github.com/virtual-db/core"
 	mysqldriver "github.com/virtual-db/mysql-driver"
 )
 
