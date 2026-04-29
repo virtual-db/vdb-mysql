@@ -33,12 +33,6 @@ If a query works against MySQL directly but not against vdb-mysql, check the go-
 
 ---
 
-## No official Docker image yet
-
-A published image at `ghcr.io/virtual-db/mysql` is planned but not yet available. You must build your own image from the included `Dockerfile` or install the pre-built binary. See the [README](../README.md) for instructions.
-
----
-
 ## Only a single exposed database
 
 vdb-mysql exposes one database name to clients, set via `VDB_DB_NAME`. Multi-database routing within a single vdb-mysql instance is not currently supported.

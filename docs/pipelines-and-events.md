@@ -212,4 +212,4 @@ When multiple handlers are registered at the same pipeline point, they are calle
 
 ## Plugin-Declared Pipelines and Events
 
-Plugins are not limited to the 14 standard pipelines. A plugin may declare its own pipelines and events in its `declare` notification, making them available for other plugins to attach to or subscribe to. See the [Plugin Protocol](./plugin-protocol.md) documentation for details.
+Plugins are not limited to the 14 standard pipelines. A plugin may declare its own pipelines and events in its `declare` notification, making them available for other plugins to attach to or subscribe to. See the [Plugin development guide](./plugins.md) for details on the `declare` notification and the full JSON-RPC protocol.

@@ -16,7 +16,7 @@ vdb-mysql holds no user list of its own. On every new connection it opens a shor
 
 SQL parsing, planning, and execution are handled by [go-mysql-server](https://github.com/dolthub/go-mysql-server), an embeddable MySQL-compatible SQL engine. It receives each statement after the wire layer decodes it.
 
-For reads, go-mysql-server calls the VDB storage backend to fetch rows. Those rows come from the source database via a persistent, read-only connection pool — the same pool that serves all clients. The schema is read from `INFORMATION_SCHEMA` and cached.
+For reads, go-mysql-server calls the VDB storage backend to fetch rows. Those rows come from the source database via a persistent, read-only connection pool — the same pool that serves all clients. The schema is read from `INFORMATION_SCHEMA` on every table access.
 
 For writes (`INSERT`, `UPDATE`, `DELETE`), go-mysql-server calls the VDB storage backend instead of issuing anything to the source. Those writes go into the **delta store** (see below) and never reach the source database.
 
@@ -98,12 +98,12 @@ Client
   Calls the VDB storage backend to fetch rows.
   │
   ▼
-[VDB Core] vdb.records.source pipeline
-  Source rows are passed through.
-  Plugins at the `transform` point may add, remove, or modify rows.
-  │
-  [Delta overlay applied]
-  Tombstoned rows are removed. Update overlays are applied. Inserted rows are appended.
+[VDB Core] vdb.records.source pipeline — transform point (built-in handler: priority 10)
+  The built-in priority-10 handler applies the delta overlay:
+    tombstoned rows are removed, update overlays replace source rows,
+    and net-new inserts are appended.
+  Plugins registered at this point with priority < 10 see raw source rows
+  (before overlay). Plugins with priority > 10 see post-overlay rows.
   │
   ▼
 [VDB Core] vdb.records.merged pipeline
@@ -142,4 +142,4 @@ Client receives an OK packet.
 - [Configuration Reference](./configuration.md)
 - [Plugins](./plugins.md)
 - [Pipelines and Events Reference](./pipelines-and-events.md)
-- [Known Gaps and Limitations](./limitations.md)
+- [Known Gaps and Limitations](./known-limitations.md)

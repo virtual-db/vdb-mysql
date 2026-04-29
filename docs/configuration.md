@@ -54,11 +54,11 @@ VDB_TLS_KEY_FILE=/etc/vdb/server.key \
 ```
 
 **With TLS enabled:**
-- The listener advertises `caching_sha2_password` and requires TLS for the full-auth handshake.
+- The listener advertises `caching_sha2_password`. The SHA2 fast-auth cache-hit path is permanently disabled so that every connection goes through full-auth, which is required to obtain the plaintext password for the source-database credential probe.
 - Minimum TLS version is 1.2.
-- The system certificate pool is used for CA verification.
+- The system certificate pool is loaded at startup. Client certificate authentication is not currently supported, so the pool has no active effect in this release.
 
 **Without TLS:**
 - The listener advertises `mysql_clear_password` and accepts plaintext connections.
-- Suitable for local development or environments where network security is handled at the infrastructure level (private VPC, mTLS service mesh, etc.).
-- Set `--ssl-mode=DISABLED` (or equivalent) in your client if it defaults to requiring TLS.
+- Most MySQL clients refuse `mysql_clear_password` by default. You must enable cleartext auth explicitly on every connecting client (e.g. `--enable-cleartext-plugin` for the MySQL CLI, `allowCleartextPasswords=true` in a Go DSN). See [TLS configuration](./tls.md#connecting-without-tls) for per-client details.
+- Suitable for local development or environments where network security is handled at the infrastructure level (private VPC, mTLS service mesh, etc.) and where you can control client configuration.

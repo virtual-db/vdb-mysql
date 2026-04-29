@@ -4,7 +4,7 @@
 
 Reads come from your real database. Writes are captured in an in-memory delta and reflected back to your application. **Nothing is written to the source.**
 
-> **Status**: Early alpha (`v0.0.1-alpha`). Not recommended for production without a thorough evaluation. See [Known Limitations](docs/limitations.md).
+> **Status**: Early alpha (`v0.0.1-alpha`). Not recommended for production without a thorough evaluation. See [Known Limitations](docs/known-limitations.md).
 
 ---
 
@@ -80,7 +80,7 @@ Plugins are standalone executables that vdb-mysql launches at startup. They atta
 Each plugin lives in its own subdirectory under `VDB_PLUGIN_DIR` and declares itself via a `manifest.json` or `manifest.yaml`.
 
 → [Plugin development guide](docs/plugins.md)  
-→ [Pipelines and events reference](docs/pipelines.md)
+→ [Pipelines and events reference](docs/pipelines-and-events.md)
 
 ---
 
@@ -90,8 +90,8 @@ Each plugin lives in its own subdirectory under `VDB_PLUGIN_DIR` and declares it
 - [Installation](docs/installation.md)
 - [TLS configuration](docs/tls.md)
 - [Plugin development](docs/plugins.md)
-- [Pipelines and events reference](docs/pipelines.md)
-- [Known limitations](docs/limitations.md)
+- [Pipelines and events reference](docs/pipelines-and-events.md)
+- [Known limitations](docs/known-limitations.md)
 
 ---
 

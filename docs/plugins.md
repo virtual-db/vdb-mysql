@@ -55,7 +55,7 @@ When vdb-mysql starts:
 1. It launches each plugin subprocess.
 2. It passes the Unix socket path to the plugin via the `VDB_SOCKET` environment variable.
 3. The plugin connects to the socket and sends a `declare` JSON-RPC 2.0 notification.
-4. vdb-mysql waits up to **10 seconds** for the `declare`. Plugins that miss the deadline are logged and skipped — the server continues without them.
+4. vdb-mysql waits up to **10 seconds** for the plugin to connect to the socket. Once connected, the `declare` notification is read immediately with no separate timeout. Plugins that fail to connect within the deadline are logged and skipped — the server continues without them.
 
 ### The `declare` notification
 
@@ -140,8 +140,7 @@ Delivered as a fire-and-forget notification (no `id`, no response expected).
 
 ### `shutdown`
 
-Sent when vdb-mysql is shutting down. The plugin should clean up and exit.
-vdb-mysql waits up to 10 seconds for the process to exit before sending SIGKILL.
+Sent when vdb-mysql is shutting down. The plugin **must send a JSON-RPC response** to acknowledge the request, then clean up and exit. vdb-mysql waits up to 10 seconds for the response; if no response arrives the process is killed. After a response is received, vdb-mysql waits up to a further 10 seconds for the process to exit before sending SIGKILL.
 
 ```json
 {
