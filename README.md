@@ -1,7 +1,7 @@
 # vdb-mysql
 
 [![Release](https://img.shields.io/github/v/release/virtual-db/vdb-mysql?include_prereleases&label=version&color=blue)](https://github.com/virtual-db/vdb-mysql/releases/latest)
-[![CI](https://github.com/virtual-db/vdb-mysql/actions/workflows/ci.yml/badge.svg)](https://github.com/virtual-db/vdb-mysql/actions/workflows/ci.yml)
+[![Build](https://github.com/virtual-db/vdb-mysql/actions/workflows/release.yml/badge.svg)](https://github.com/virtual-db/vdb-mysql/actions/workflows/release.yml)
 [![License: ELv2](https://img.shields.io/badge/license-ELv2-lightgrey)](LICENSE.md)
 
 **VirtualDB** is a MySQL-compatible proxy that sits between your application and your MySQL database. It intercepts every query and write, routes them through a programmable plugin layer, and returns results — without ever modifying the source.
