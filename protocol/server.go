@@ -188,6 +188,9 @@ func (c *Conn) ReadRequest() (Op, []byte, error) { return ReadFrame(c.nc) }
 // Reply sends the reply of a request op.
 func (c *Conn) Reply(op Op, msg proto.Message) error { return Encode(c.nc, op.Reply(), msg) }
 
+// Raw sends a frame with an arbitrary body (tests that send malformed frames).
+func (c *Conn) Raw(op Op, body []byte) error { return WriteFrame(c.nc, op, body) }
+
 // Fail sends an error reply.
 func (c *Conn) Fail(e *Error) error { return Encode(c.nc, OpError, e) }
 
