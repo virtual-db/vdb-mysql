@@ -855,13 +855,12 @@ func (x *Key) GetImage() []byte {
 }
 
 // Range bounds on an index: raw bounds for the Source, images for the Delta.
+// An absent low or high is an open bound.
 type Range struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	HasLow        bool                   `protobuf:"varint,1,opt,name=has_low,json=hasLow,proto3" json:"has_low,omitempty"`
 	Low           *Key                   `protobuf:"bytes,2,opt,name=low,proto3" json:"low,omitempty"`
 	LowIncl       bool                   `protobuf:"varint,3,opt,name=low_incl,json=lowIncl,proto3" json:"low_incl,omitempty"`
 	LowParts      uint32                 `protobuf:"varint,4,opt,name=low_parts,json=lowParts,proto3" json:"low_parts,omitempty"`
-	HasHigh       bool                   `protobuf:"varint,5,opt,name=has_high,json=hasHigh,proto3" json:"has_high,omitempty"`
 	High          *Key                   `protobuf:"bytes,6,opt,name=high,proto3" json:"high,omitempty"`
 	HighIncl      bool                   `protobuf:"varint,7,opt,name=high_incl,json=highIncl,proto3" json:"high_incl,omitempty"`
 	HighParts     uint32                 `protobuf:"varint,8,opt,name=high_parts,json=highParts,proto3" json:"high_parts,omitempty"`
@@ -899,13 +898,6 @@ func (*Range) Descriptor() ([]byte, []int) {
 	return file_vdb_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *Range) GetHasLow() bool {
-	if x != nil {
-		return x.HasLow
-	}
-	return false
-}
-
 func (x *Range) GetLow() *Key {
 	if x != nil {
 		return x.Low
@@ -925,13 +917,6 @@ func (x *Range) GetLowParts() uint32 {
 		return x.LowParts
 	}
 	return 0
-}
-
-func (x *Range) GetHasHigh() bool {
-	if x != nil {
-		return x.HasHigh
-	}
-	return false
 }
 
 func (x *Range) GetHigh() *Key {
@@ -2696,8 +2681,7 @@ func (x *CountReply) GetDeclined() bool {
 type Stats struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Table uint32                 `protobuf:"varint,1,opt,name=table,proto3" json:"table,omitempty"`
-	// When set, records_in_range is asked for this range on this index.
-	HasRange      bool   `protobuf:"varint,2,opt,name=has_range,json=hasRange,proto3" json:"has_range,omitempty"`
+	// When range is set, records_in_range is asked for it on this index.
 	Index         uint32 `protobuf:"varint,3,opt,name=index,proto3" json:"index,omitempty"`
 	Range         *Range `protobuf:"bytes,4,opt,name=range,proto3" json:"range,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -2739,13 +2723,6 @@ func (x *Stats) GetTable() uint32 {
 		return x.Table
 	}
 	return 0
-}
-
-func (x *Stats) GetHasRange() bool {
-	if x != nil {
-		return x.HasRange
-	}
-	return false
 }
 
 func (x *Stats) GetIndex() uint32 {
@@ -5063,13 +5040,11 @@ const file_vdb_proto_rawDesc = "" +
 	".vdb.ValueR\x06values\"-\n" +
 	"\x03Key\x12\x10\n" +
 	"\x03raw\x18\x01 \x01(\fR\x03raw\x12\x14\n" +
-	"\x05image\x18\x02 \x01(\fR\x05image\"\xe9\x01\n" +
-	"\x05Range\x12\x17\n" +
-	"\ahas_low\x18\x01 \x01(\bR\x06hasLow\x12\x1a\n" +
+	"\x05image\x18\x02 \x01(\fR\x05image\"\xb5\x01\n" +
+	"\x05Range\x12\x1a\n" +
 	"\x03low\x18\x02 \x01(\v2\b.vdb.KeyR\x03low\x12\x19\n" +
 	"\blow_incl\x18\x03 \x01(\bR\alowIncl\x12\x1b\n" +
-	"\tlow_parts\x18\x04 \x01(\rR\blowParts\x12\x19\n" +
-	"\bhas_high\x18\x05 \x01(\bR\ahasHigh\x12\x1c\n" +
+	"\tlow_parts\x18\x04 \x01(\rR\blowParts\x12\x1c\n" +
 	"\x04high\x18\x06 \x01(\v2\b.vdb.KeyR\x04high\x12\x1b\n" +
 	"\thigh_incl\x18\a \x01(\bR\bhighIncl\x12\x1d\n" +
 	"\n" +
@@ -5215,10 +5190,9 @@ const file_vdb_proto_rawDesc = "" +
 	"\n" +
 	"CountReply\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x04R\x05count\x12\x1a\n" +
-	"\bdeclined\x18\x02 \x01(\bR\bdeclined\"r\n" +
+	"\bdeclined\x18\x02 \x01(\bR\bdeclined\"U\n" +
 	"\x05Stats\x12\x14\n" +
-	"\x05table\x18\x01 \x01(\rR\x05table\x12\x1b\n" +
-	"\thas_range\x18\x02 \x01(\bR\bhasRange\x12\x14\n" +
+	"\x05table\x18\x01 \x01(\rR\x05table\x12\x14\n" +
 	"\x05index\x18\x03 \x01(\rR\x05index\x12 \n" +
 	"\x05range\x18\x04 \x01(\v2\n" +
 	".vdb.RangeR\x05range\"B\n" +

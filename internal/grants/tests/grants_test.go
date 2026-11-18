@@ -15,7 +15,7 @@ import (
 var exposed = []string{"shop", "shop_2", "crm"}
 
 func TestMirror(t *testing.T) {
-	src := &Account{Principal: Principal{"alice", "%"}, Atoms: map[Atom]bool{
+	src := &Account{Principal: Principal{User: "alice", Host: "%"}, Atoms: map[Atom]bool{
 		{Priv: "SELECT", DB: "*", Table: "*"}:                          true, // global → each exposed database
 		{Priv: "SUPER", DB: "*", Table: "*"}:                           true, // administrative: dropped
 		{Priv: "INSERT", DB: "shop\\_2", Table: "*"}:                   true, // escaped name
@@ -42,7 +42,7 @@ func TestMirror(t *testing.T) {
 }
 
 func TestDiff(t *testing.T) {
-	p := Principal{"bob", "10.%"}
+	p := Principal{User: "bob", Host: "10.%"}
 	want := map[Principal]*Account{p: {Principal: p, Method: "mysql_native_password", RequireSSL: true,
 		Atoms: map[Atom]bool{{Priv: "SELECT", DB: "shop", Table: "t", Col: "a"}: true}}}
 	stmts := Diff(want, map[Principal]*Account{})
@@ -51,7 +51,7 @@ func TestDiff(t *testing.T) {
 		!strings.Contains(all, "GRANT SELECT (`a`) ON `shop`.`t` TO 'bob'@'10.%'") {
 		t.Fatalf("statements:\n%s", all)
 	}
-	have := map[Principal]*Account{p: want[p], {"gone", "%"}: {Principal: Principal{"gone", "%"}, Atoms: map[Atom]bool{}}}
+	have := map[Principal]*Account{p: want[p], {User: "gone", Host: "%"}: {Principal: Principal{User: "gone", Host: "%"}, Atoms: map[Atom]bool{}}}
 	have[p].Method = "vdb_mysql_auth_native"
 	stmts = Diff(want, have)
 	if len(stmts) != 1 || stmts[0] != "DROP USER 'gone'@'%'" {
@@ -60,7 +60,7 @@ func TestDiff(t *testing.T) {
 }
 
 func TestShowGrants(t *testing.T) {
-	a := FromShowGrants(Principal{"c", "%"}, []string{
+	a := FromShowGrants(Principal{User: "c", Host: "%"}, []string{
 		"GRANT SELECT, INSERT ON `shop`.* TO `c`@`%`",
 		"GRANT UPDATE (`x`, `y`) ON `shop`.`t` TO `c`@`%`",
 		"GRANT `reader`@`%` TO `c`@`%`",

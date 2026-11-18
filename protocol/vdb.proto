@@ -30,12 +30,11 @@ message Key {
 }
 
 // Range bounds on an index: raw bounds for the Source, images for the Delta.
+// An absent low or high is an open bound.
 message Range {
-  bool has_low = 1;
   Key low = 2;
   bool low_incl = 3;
   uint32 low_parts = 4;
-  bool has_high = 5;
   Key high = 6;
   bool high_incl = 7;
   uint32 high_parts = 8;
@@ -283,8 +282,7 @@ message CountReply {
 
 message Stats {
   uint32 table = 1;
-  // When set, records_in_range is asked for this range on this index.
-  bool has_range = 2;
+  // When range is set, records_in_range is asked for it on this index.
   uint32 index = 3;
   Range range = 4;
 }

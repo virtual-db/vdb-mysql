@@ -28,7 +28,7 @@ func row(vals ...string) *Row {
 // Goldens returns the examples, requests then replies.
 func Goldens() []Golden {
 	key := &Key{Raw: []byte{1, 0, 0, 0}, Image: []byte{0x80, 0, 0, 1}}
-	rng := &Range{HasLow: true, Low: key, LowIncl: true, LowParts: 1, HasHigh: true, High: &Key{Raw: []byte{9, 0, 0, 0}, Image: []byte{0x80, 0, 0, 9}}, HighParts: 1}
+	rng := &Range{Low: key, LowIncl: true, LowParts: 1, High: &Key{Raw: []byte{9, 0, 0, 0}, Image: []byte{0x80, 0, 0, 9}}, HighParts: 1}
 	ref := &RowRef{Origin: Origin_ORIGIN_SOURCE, Pk: key, SourceKey: []byte{1, 0, 0, 0, '1'}, Whole: row("1", "ann")}
 	batch := &Batch{Rows: []*Row{row("1", "ann"), {Values: []*Value{v("2"), {Null: true}}}}, Refs: []*RowRef{ref, ref}, End: true}
 	ims := &Images{Images: [][]byte{{0x80, 0, 0, 1}}}
@@ -55,7 +55,7 @@ func Goldens() []Golden {
 		{"Lookup", OpLookup, &Lookup{Table: 1, Version: 1, Keys: []*Key{key}, Columns: []uint32{0, 1}, Lock: LockMode_LOCK_EXCLUSIVE}},
 		{"LookupNext", OpLookupNext, &LookupNext{Continuation: []byte{1, 2, 3}}},
 		{"Count", OpCount, &Count{Table: 1}},
-		{"Stats", OpStats, &Stats{Table: 1, HasRange: true, Index: 0, Range: rng}},
+		{"Stats", OpStats, &Stats{Table: 1, Index: 0, Range: rng}},
 		{"Insert", OpInsert, &Insert{Table: 1, Row: row("4", "dan"), Images: ims}},
 		{"InsertBatch", OpInsertBatch, &InsertBatch{Table: 1, Rows: []*Row{row("4", "dan")}, Images: []*Images{ims}}},
 		{"Update", OpUpdate, &Update{Table: 1, Old: ref, Row: row("1", "anna"), Images: ims}},

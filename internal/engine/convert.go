@@ -90,11 +90,11 @@ func fromRef(r core.RowRef) *protocol.RowRef {
 
 func toRange(r *protocol.Range) core.KeyRange {
 	kr := core.KeyRange{}
-	if r.HasLow && r.Low != nil {
+	if r.Low != nil {
 		kr.Images.Low, kr.RawLow, kr.LowParts = r.Low.Image, r.Low.Raw, uint16(r.LowParts)
 		kr.Images.LowIncl, kr.RawLowIncl = r.LowIncl, r.LowIncl
 	}
-	if r.HasHigh && r.High != nil {
+	if r.High != nil {
 		kr.Images.High, kr.RawHigh, kr.HighParts = r.High.Image, r.High.Raw, uint16(r.HighParts)
 		kr.Images.HighIncl, kr.RawHighIncl = r.HighIncl, r.HighIncl
 	}

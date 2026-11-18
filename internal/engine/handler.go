@@ -673,7 +673,7 @@ func (c *conn) statsReply(m *protocol.Stats) (proto.Message, error) {
 		return nil, &core.Error{Code: core.ErrRefused, Msg: "unknown table"}
 	}
 	var r *core.KeyRange
-	if m.HasRange && m.Range != nil {
+	if m.Range != nil {
 		kr := toRange(m.Range)
 		r = &kr
 	}
