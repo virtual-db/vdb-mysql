@@ -77,7 +77,7 @@ func Goldens() []Golden {
 		{"DdlCaptured", OpDdlCaptured, &DdlCaptured{ConnId: 7, Statement: "CREATE VIEW v AS SELECT 1", Database: "shop", SqlMode: "ONLY_FULL_GROUP_BY", Definer: "app@%", Kind: 1, ObjectName: "v"}},
 		{"Event", OpEvent, &Event{Kind: EventKind_EVENT_STATEMENT, ConnId: 7, Account: "app@%", Host: "10.0.0.5", Digest: "abc", DurationUs: 120, Rows: 1}},
 		{"QueryReceived", OpQueryReceived, &QueryReceived{ConnId: 7, Statement: "SELECT 1", Database: "shop"}},
-		{"ImagesNeeded", OpImagesNeeded, &ImagesNeeded{Table: 2, Rows: []*Row{row("10", "1")}}},
+		{"ImagesNeeded", OpImagesNeeded, &ImagesNeeded{Table: 2, Rows: []*Row{row("10", "1")}, Database: "shop", Name: "orders"}},
 		{"Waiting", OpWaiting, &Waiting{Holder: 8}},
 		{"Error", OpError, &Error{Code: 1, Index: 0, Message: "Duplicate entry for key 'PRIMARY'"}},
 		// Replies.

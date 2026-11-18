@@ -221,6 +221,9 @@ func (c *conn) onWait(holder uint64) {
 // onImages asks vdb.so for the sort images of rows a cascade writes (D-86).
 func (c *conn) onImages(t core.TableID, rows []core.Row) ([][]core.KeyImage, error) {
 	req := &protocol.ImagesNeeded{Table: uint32(t)}
+	if d, ok := c.h.api.Catalog().Table(t); ok {
+		req.Database, req.Name = d.Database, d.Name
+	}
 	for _, r := range rows {
 		req.Rows = append(req.Rows, fromRow(r))
 	}

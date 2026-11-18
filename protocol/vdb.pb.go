@@ -1376,6 +1376,8 @@ type ImagesNeeded struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Table         uint32                 `protobuf:"varint,1,opt,name=table,proto3" json:"table,omitempty"`
 	Rows          []*Row                 `protobuf:"bytes,2,rep,name=rows,proto3" json:"rows,omitempty"`
+	Database      string                 `protobuf:"bytes,3,opt,name=database,proto3" json:"database,omitempty"`
+	Name          string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1422,6 +1424,20 @@ func (x *ImagesNeeded) GetRows() []*Row {
 		return x.Rows
 	}
 	return nil
+}
+
+func (x *ImagesNeeded) GetDatabase() string {
+	if x != nil {
+		return x.Database
+	}
+	return ""
+}
+
+func (x *ImagesNeeded) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
 }
 
 type ImagesReply struct {
@@ -5088,10 +5104,12 @@ const file_vdb_proto_rawDesc = "" +
 	"\x06holder\x18\x04 \x01(\x04R\x06holder\x12\x18\n" +
 	"\amessage\x18\x05 \x01(\tR\amessage\"!\n" +
 	"\aWaiting\x12\x16\n" +
-	"\x06holder\x18\x01 \x01(\x04R\x06holder\"B\n" +
+	"\x06holder\x18\x01 \x01(\x04R\x06holder\"r\n" +
 	"\fImagesNeeded\x12\x14\n" +
 	"\x05table\x18\x01 \x01(\rR\x05table\x12\x1c\n" +
-	"\x04rows\x18\x02 \x03(\v2\b.vdb.RowR\x04rows\"P\n" +
+	"\x04rows\x18\x02 \x03(\v2\b.vdb.RowR\x04rows\x12\x1a\n" +
+	"\bdatabase\x18\x03 \x01(\tR\bdatabase\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\"P\n" +
 	"\vImagesReply\x12\x1f\n" +
 	"\x04rows\x18\x01 \x03(\v2\v.vdb.ImagesR\x04rows\x12 \n" +
 	"\x05error\x18\x02 \x01(\v2\n" +

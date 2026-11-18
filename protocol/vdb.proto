@@ -106,6 +106,8 @@ message Waiting {
 message ImagesNeeded {
   uint32 table = 1;
   repeated Row rows = 2;
+  string database = 3;
+  string name = 4;
 }
 
 message ImagesReply {
