@@ -10,7 +10,7 @@ package pushdown
 
 import (
 	_ "embed"
-	"log/slog"
+	"github.com/virtual-db/vdb-mysql/internal/logx"
 	"strings"
 	"sync/atomic"
 
@@ -19,7 +19,7 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 )
 
-var log = slog.With("pkg", "pushdown")
+var log = logx.Pkg("pushdown")
 
 //go:embed allowlist.yaml
 var allowlistYAML []byte

@@ -8,7 +8,7 @@ package identity
 import (
 	"context"
 	"crypto/tls"
-	"log/slog"
+	"github.com/virtual-db/vdb-mysql/internal/logx"
 	"regexp"
 	"sync/atomic"
 	"time"
@@ -17,7 +17,7 @@ import (
 	"github.com/virtual-db/vdb-mysql/internal/handshake"
 )
 
-var log = slog.With("pkg", "identity")
+var log = logx.Pkg("identity")
 
 // Grants is what the relay needs from the grant mirror.
 type Grants interface {

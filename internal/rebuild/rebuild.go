@@ -8,7 +8,7 @@ package rebuild
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"github.com/virtual-db/vdb-mysql/internal/logx"
 	"regexp"
 	"sort"
 	"strings"
@@ -19,7 +19,7 @@ import (
 	"github.com/virtual-db/vdb-mysql/internal/control"
 )
 
-var log = slog.With("pkg", "rebuild")
+var log = logx.Pkg("rebuild")
 
 // Control is what the rebuild needs from the control channel.
 type Control interface {

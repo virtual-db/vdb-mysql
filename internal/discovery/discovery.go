@@ -7,7 +7,7 @@ package discovery
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"github.com/virtual-db/vdb-mysql/internal/logx"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,7 +19,7 @@ import (
 	"github.com/virtual-db/vdb-mysql/internal/source"
 )
 
-var log = slog.With("pkg", "discovery")
+var log = logx.Pkg("discovery")
 
 // Reader runs catalog reads on the Source.
 type Reader interface {

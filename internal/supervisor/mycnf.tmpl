@@ -11,7 +11,6 @@ skip-networking
 {{- end}}
 plugin-dir = {{.PluginDir}}
 plugin-load-add = vdb.so
-plugin-load-add = auth_socket.so
 vdb_mysql_storage_socket = {{.VdbSocket}}
 default_storage_engine = vdb_mysql_storage
 default_tmp_storage_engine = InnoDB

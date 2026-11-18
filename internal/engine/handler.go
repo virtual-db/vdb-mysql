@@ -5,8 +5,8 @@ package engine
 
 import (
 	"context"
+	"github.com/virtual-db/vdb-mysql/internal/logx"
 	"io"
-	"log/slog"
 	"strconv"
 	"strings"
 	"sync"
@@ -21,7 +21,7 @@ import (
 	"github.com/virtual-db/vdb-mysql/protocol"
 )
 
-var log = slog.With("pkg", "engine")
+var log = logx.Pkg("engine")
 
 // Config holds the batch limits.
 type Config struct {

@@ -9,7 +9,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
+	"github.com/virtual-db/vdb-mysql/internal/logx"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,7 +22,7 @@ import (
 	"github.com/virtual-db/vdb-mysql/internal/sourcetls"
 )
 
-var log = slog.With("pkg", "source")
+var log = logx.Pkg("source")
 
 // Pushdown reduces a pushed condition to the parts the Source may evaluate.
 type Pushdown interface {

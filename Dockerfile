@@ -30,11 +30,12 @@ COPY --from=mysql /usr/local/mysql /usr/local/mysql
 
 FROM base AS template
 COPY image/init-template.sql /tmp/init-template.sql
-RUN mkdir -p /usr/share/vdb && chown vdb /usr/share/vdb \
-    && su -s /bin/sh vdb -c '/usr/local/mysql/bin/mysqld --no-defaults --initialize-insecure \
+RUN mkdir -p /usr/share/vdb && chown vdb /usr/share/vdb
+USER vdb
+RUN /usr/local/mysql/bin/mysqld --no-defaults --initialize-insecure \
          --datadir=/usr/share/vdb/template --plugin-dir=/usr/local/mysql/lib/plugin \
          --plugin-load-add=auth_socket.so --init-file=/tmp/init-template.sql \
-         --log-error=/tmp/template.err' \
+         --log-error=/tmp/template.err \
     || (cat /tmp/template.err; exit 1)
 
 FROM base AS runtime

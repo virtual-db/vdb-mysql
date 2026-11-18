@@ -11,6 +11,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"github.com/virtual-db/vdb-mysql/internal/logx"
 	"io"
 	"io/fs"
 	"log/slog"
@@ -28,7 +29,7 @@ import (
 	"github.com/virtual-db/vdb-mysql/internal/config"
 )
 
-var log = slog.With("pkg", "supervisor")
+var log = logx.Pkg("supervisor")
 
 //go:embed mycnf.tmpl
 var mycnfTmpl string

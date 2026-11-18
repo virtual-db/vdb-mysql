@@ -8,7 +8,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log/slog"
+	"github.com/virtual-db/vdb-mysql/internal/logx"
 	"strconv"
 	"strings"
 	"sync"
@@ -38,7 +38,7 @@ import (
 	"github.com/virtual-db/vdb-mysql/protocol"
 )
 
-var log = slog.With("pkg", "server")
+var log = logx.Pkg("server")
 
 // App is what the server needs from core.App.
 type App interface {

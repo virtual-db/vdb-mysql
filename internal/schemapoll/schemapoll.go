@@ -10,7 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
+	"github.com/virtual-db/vdb-mysql/internal/logx"
 	"sort"
 	"strings"
 	"sync"
@@ -24,7 +24,7 @@ import (
 	"github.com/virtual-db/vdb-mysql/internal/source"
 )
 
-var log = slog.With("pkg", "schemapoll")
+var log = logx.Pkg("schemapoll")
 
 // Change is one applied Source change (a row of vdb.schema_changes).
 type Change struct {

@@ -7,14 +7,14 @@ package grants
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"github.com/virtual-db/vdb-mysql/internal/logx"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 )
 
-var log = slog.With("pkg", "grants")
+var log = logx.Pkg("grants")
 
 // Exec runs one statement on mysqld.
 type Exec func(ctx context.Context, stmt string) error
