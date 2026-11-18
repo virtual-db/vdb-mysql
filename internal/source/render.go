@@ -326,13 +326,28 @@ func renderPage(d *core.TableDef, p projection, idx core.IndexID, ranges []core.
 func renderKeyBatch(d *core.TableDef, p projection, cols []uint16, keys [][]core.Value, shape string) shaped {
 	var parts []string
 	for i, k := range keys {
-		c := boundCond(d, cols, k, "=")
-		if c == "" {
-			c = "FALSE"
-		}
+		c := keyEq(d, cols, k)
 		parts = append(parts, "(SELECT "+strconv.Itoa(i)+" AS vdb_k, "+strings.Join(p.exprs, ", ")+" FROM "+tableRef(d)+" WHERE "+c+")")
 	}
 	return shaped{sql: strings.Join(parts, " UNION ALL "), shape: shape}
+}
+
+// keyEq matches one exact key. A handler key lookup matches NULL key parts
+// as values (the index's NULL marker), so a NULL part renders as IS NULL.
+func keyEq(d *core.TableDef, cols []uint16, k []core.Value) string {
+	cols = cols[:len(k)]
+	var parts []string
+	for i, v := range k {
+		if v.Null {
+			parts = append(parts, rawCols(d, cols[i:i+1])[0]+" IS NULL")
+			continue
+		}
+		parts = append(parts, boundCond(d, cols[i:i+1], k[i:i+1], "="))
+	}
+	if len(parts) == 0 {
+		return "TRUE"
+	}
+	return strings.Join(parts, " AND ")
 }
 
 // renderCount renders SELECT COUNT(*).
@@ -349,9 +364,25 @@ func renderExplain(s shaped) shaped {
 func renderSet(settings [][2]string) shaped {
 	parts := make([]string, len(settings))
 	for i, s := range settings {
-		parts[i] = s[0] + " = " + quote([]byte(s[1]))
+		v := quote([]byte(s[1]))
+		if isUint(s[1]) {
+			v = s[1] // integer variables refuse a quoted value
+		}
+		parts[i] = s[0] + " = " + v
 	}
 	return shaped{sql: "SET SESSION " + strings.Join(parts, ", "), shape: ShapeSession}
+}
+
+func isUint(v string) bool {
+	if v == "" || len(v) > 9 {
+		return false
+	}
+	for _, c := range v {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // RenderCatalog wraps a fixed catalog read (information_schema, SHOW CREATE,

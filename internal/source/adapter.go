@@ -227,20 +227,17 @@ func (a *Adapter) Background(ctx context.Context, s shaped) ([][]core.Value, err
 	return a.run(ctx, a.bgPool, 0, "", nil, s)
 }
 
-// Snapshot opens the Source half of a snapshot pair.
-func (a *Adapter) Snapshot(info core.SessionInfo, ctx core.StmtContext) (core.SourceSnapshot, error) {
+// Reserve takes a Source connection for a snapshot; Start opens it.
+func (a *Adapter) Reserve(info core.SessionInfo, ctx core.StmtContext) (core.SourceSnapshot, error) {
 	s := &snapshot{a: a, info: info, ctx: ctx, opened: time.Now(), mirrored: map[string]string{}, digest: ctx.Digest}
 	s.lastUsed = s.opened
 	if !a.cfg.Snapshot {
 		s.off = true
 		return s, nil
 	}
-	if err := s.open(); err != nil {
+	if err := s.reserve(); err != nil {
 		return nil, err
 	}
-	a.mu.Lock()
-	a.snapshots[s] = true
-	a.mu.Unlock()
 	return s, nil
 }
 

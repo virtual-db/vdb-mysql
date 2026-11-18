@@ -40,6 +40,15 @@ type snapshot struct {
 }
 
 func (s *snapshot) open() error {
+	if err := s.reserve(); err != nil {
+		return err
+	}
+	return s.begin()
+}
+
+// reserve takes a pooled connection and mirrors the session settings onto
+// it; it may wait up to the connect wait for a free connection.
+func (s *snapshot) reserve() error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.a.cfg.ConnectWait)
 	defer cancel()
 	conn, err := s.a.snapPool.Conn(ctx)
@@ -49,10 +58,34 @@ func (s *snapshot) open() error {
 	s.conn = conn
 	if err := s.mirror(); err != nil {
 		conn.Close()
+		s.conn = nil
 		return err
 	}
+	return nil
+}
+
+// Start opens the consistent snapshot on the reserved connection.
+func (s *snapshot) Start() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.off {
+		return nil
+	}
+	s.opened, s.lastUsed = time.Now(), time.Now()
+	if err := s.begin(); err != nil {
+		return err
+	}
+	s.a.mu.Lock()
+	s.a.snapshots[s] = true
+	s.a.mu.Unlock()
+	return nil
+}
+
+func (s *snapshot) begin() error {
+	conn := s.conn
 	if _, err := conn.ExecContext(context.Background(), s.a.comment(s.info.ConnID)+"START TRANSACTION WITH CONSISTENT SNAPSHOT, READ ONLY"); err != nil {
 		conn.Close()
+		s.conn = nil
 		return &core.Error{Code: core.ErrSource, Msg: "cannot open a Source snapshot: " + err.Error()}
 	}
 	return nil
