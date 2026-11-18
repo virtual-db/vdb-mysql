@@ -71,12 +71,13 @@ type Server struct {
 	relay       *identity.Relay
 	rebuildErrs []rebuild.Error
 
-	mu      sync.Mutex
-	state   string
-	mysqldV string
-	cancel  context.CancelFunc
-	done    chan struct{}
-	recover sync.Mutex
+	mu        sync.Mutex
+	state     string
+	mysqldV   string
+	cancel    context.CancelFunc
+	done      chan struct{}
+	recover   sync.Mutex
+	cleanOnce sync.Once
 }
 
 // New returns a Server.
@@ -111,6 +112,7 @@ func (s *Server) Run() error {
 	}
 	for _, st := range steps {
 		if err := st.fn(ctx); err != nil {
+			log.Error("start-up step failed", "step", st.name, "err", err)
 			s.setState("failed: " + st.name)
 			s.cleanup()
 			return fmt.Errorf("server: %s: %w", st.name, err)
@@ -390,6 +392,10 @@ func (s *Server) Stop() error {
 }
 
 func (s *Server) cleanup() {
+	s.cleanOnce.Do(s.doCleanup)
+}
+
+func (s *Server) doCleanup() {
 	if s.sup != nil {
 		_ = s.sup.Shutdown()
 	}

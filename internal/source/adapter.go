@@ -131,7 +131,15 @@ func (a *Adapter) Version() string { return a.version }
 
 // Close closes the pools.
 func (a *Adapter) Close() error {
-	close(a.stop)
+	a.mu.Lock()
+	select {
+	case <-a.stop:
+		a.mu.Unlock()
+		return nil
+	default:
+		close(a.stop)
+	}
+	a.mu.Unlock()
 	if a.snapPool != nil {
 		a.snapPool.Close()
 	}
