@@ -28,7 +28,8 @@ func check(s shaped) error {
 			body = body[i+2:]
 		}
 	}
-	body = strings.TrimSpace(body)
+	// Tagged key batches are parenthesised SELECTs joined with UNION ALL.
+	body = strings.TrimLeft(strings.TrimSpace(body), "(")
 	up := strings.ToUpper(body)
 	for _, a := range allowed {
 		if strings.HasPrefix(up, a) && (len(up) == len(a) || up[len(a)] == ' ' || up[len(a)] == '(') {
