@@ -1,47 +1,53 @@
-# =============================================================================
-# virtual-db/mysql — Dockerfile
+# vdb-mysql: the environment image (implementation plan doc 14 §3).
 #
-# Produces a minimal release image containing only the vdb-mysql binary.
-# All dependencies are resolved from their published module versions; no local
-# source replacements or go.work files are needed.
+#   go        build the vdb-mysql binary
+#   mysql     mysqld and vdb.so from a pinned vdb-mysql-plugins image
+#   template  the template data directory: mysqld's system schema and the
+#             control account vdb_admin@localhost with auth_socket
+#   runtime   oraclelinux:9-slim with mysqld, vdb-mysql, the template, the
+#             CA bundles and the licences; runs as user vdb
 #
-# Runtime environment variables:
-#   VDB_LISTEN_ADDR      — address:port the server listens on (default :3306)
-#   VDB_DB_NAME          — database name exposed to connecting clients
-#   VDB_SOURCE_DSN       — DSN for the upstream MySQL source
-#   VDB_AUTH_SOURCE_ADDR — host:port of the auth source MySQL instance
-#   VDB_PLUGIN_DIR       — optional: directory containing plugin subdirectories
-# =============================================================================
+# Build the debug variant with --build-arg PLUGINS_IMAGE=<...>-debug.
 
-# -----------------------------------------------------------------------------
-# Stage 1: builder
-# -----------------------------------------------------------------------------
-FROM golang:1.23-alpine AS builder
+ARG PLUGINS_IMAGE=ghcr.io/virtual-db/vdb-mysql-plugins:8.4.11-v0.1.0
+ARG BASE=oraclelinux:9-slim
 
+FROM golang:1.26.9 AS go
 WORKDIR /build
-
-# Copy only the module files first so Docker can cache the download layer
-# independently of source changes.
 COPY go.mod go.sum ./
-
 RUN go mod download
-
-# Copy source and build the binary.
 COPY . .
+ARG VERSION=dev
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /vdb-mysql .
 
-RUN CGO_ENABLED=0 go build -trimpath -o /out/vdb-mysql .
+FROM ${PLUGINS_IMAGE} AS mysql
 
-# -----------------------------------------------------------------------------
-# Stage 2: runtime
-# -----------------------------------------------------------------------------
-FROM alpine:3.20
+FROM ${BASE} AS base
+RUN microdnf install -y libaio openssl-libs ncurses-libs numactl-libs ca-certificates tzdata shadow-utils procps-ng \
+    && microdnf clean all \
+    && useradd -u 1000 -m -s /sbin/nologin vdb
+COPY --from=mysql /usr/local/mysql /usr/local/mysql
 
-# ca-certificates — required for any TLS connections the binary makes at runtime.
-# tzdata         — ensures time-zone-aware SQL functions behave correctly.
-RUN apk add --no-cache ca-certificates tzdata
+FROM base AS template
+COPY image/init-template.sql /tmp/init-template.sql
+RUN mkdir -p /usr/share/vdb && chown vdb /usr/share/vdb \
+    && su -s /bin/sh vdb -c '/usr/local/mysql/bin/mysqld --no-defaults --initialize-insecure \
+         --datadir=/usr/share/vdb/template --plugin-dir=/usr/local/mysql/lib/plugin \
+         --plugin-load-add=auth_socket.so --init-file=/tmp/init-template.sql \
+         --log-error=/tmp/template.err' \
+    || (cat /tmp/template.err; exit 1)
 
-COPY --from=builder /out/vdb-mysql /usr/local/bin/vdb-mysql
-
+FROM base AS runtime
+COPY --from=go /vdb-mysql /usr/local/bin/vdb-mysql
+COPY --from=template /usr/share/vdb/template /usr/share/vdb/template
+COPY ca/ /usr/share/vdb/ca/
+COPY --from=mysql /usr/local/mysql/share/vdb/ /usr/share/vdb/licenses/
+RUN mkdir -p /var/lib/vdb/mysql /var/lib/vdb/tmp /var/lib/vdb/files /var/lib/vdb/plugins /run/vdb /etc/vdb \
+    && chown -R vdb /var/lib/vdb /run/vdb \
+    && chmod -R a-w /usr/share/vdb/template
+LABEL org.opencontainers.image.title="VDB for MySQL" \
+      org.opencontainers.image.description="A MySQL-compatible database environment over a read-only Source" \
+      org.opencontainers.image.licenses="Elastic-2.0 AND GPL-2.0-only"
+USER vdb
 EXPOSE 3306
-
 ENTRYPOINT ["/usr/local/bin/vdb-mysql"]

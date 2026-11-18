@@ -83,3 +83,16 @@ jobs:
           # Cache layers in the GHCR cache to speed up subsequent builds.
           cache-from: type=registry,ref=${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+          build-args: |
+            VERSION=${{ github.ref_name }}
+
+      - name: Build and push the debug variant
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-debug
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            PLUGINS_IMAGE=ghcr.io/virtual-db/vdb-mysql-plugins:8.4.11-v0.1.0-debug

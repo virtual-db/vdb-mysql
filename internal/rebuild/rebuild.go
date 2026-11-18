@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -190,6 +191,21 @@ func (r *Rebuilder) object(ctx context.Context, o core.Object) error {
 				return err
 			}
 		}
-		return e.Exec(ctx, o.Statement)
+		return e.Exec(ctx, WithDefiner(o.Statement, o.Definer))
 	})
+}
+
+var definerRe = regexp.MustCompile(`(?is)^\s*CREATE\s+(OR\s+REPLACE\s+)?(ALGORITHM\s*=\s*\w+\s+)?`)
+
+// WithDefiner adds DEFINER=<definer> to a captured CREATE statement that
+// names none, so the control session does not become the definer at rebuild.
+func WithDefiner(stmt, definer string) string {
+	if definer == "" || strings.Contains(strings.ToUpper(stmt), "DEFINER") {
+		return stmt
+	}
+	loc := definerRe.FindStringIndex(stmt)
+	if loc == nil {
+		return stmt
+	}
+	return stmt[:loc[1]] + "DEFINER=" + definer + " " + stmt[loc[1]:]
 }
