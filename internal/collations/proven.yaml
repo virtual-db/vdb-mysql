@@ -1,0 +1,5 @@
+# proven.yaml: per mysqld release, the collations proven for order and for
+# equality (implementation plan doc 12 §4.3), written by the collation suite
+# in vdb-tests (doc 15 §5) and committed by pull request. A release not in
+# this file proves only binary collations and columns without a collation.
+releases: {}

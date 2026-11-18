@@ -1,72 +1,66 @@
+// Command vdb-mysql is VDB for MySQL: it supervises a stock mysqld that
+// loads vdb.so, serves the plug-ins over the plug-in protocol, and keeps the
+// Delta in vdb-core (implementation plan doc 09 §2).
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
-	"log"
+	"log/slog"
 	"os"
 
 	core "github.com/virtual-db/vdb-core"
-	mysqldriver "github.com/virtual-db/vdb-mysql-driver"
+
+	"github.com/virtual-db/vdb-mysql/internal/config"
+	"github.com/virtual-db/vdb-mysql/internal/server"
+	"github.com/virtual-db/vdb-mysql/internal/source"
+	"github.com/virtual-db/vdb-mysql/internal/supervisor"
 )
 
+// version is set at build time with -ldflags "-X main.version=<tag>".
+var version = "dev"
+
 func main() {
+	cfg, err := config.Load()
+	if err != nil {
+		setupLogging("json")
+		slog.Error("vdb-mysql: configuration", "pkg", "main", "err", err)
+		os.Exit(2)
+	}
+	setupLogging(cfg.LogFormat)
+
+	src := source.New(cfg.Source) // not connected yet
+	sup := supervisor.New(cfg.Mysqld, cfg.Socket, cfg.MysqldSocket)
+
 	app := core.New(core.Config{
-		PluginDir: env("VDB_PLUGIN_DIR", "plugins"),
+		PluginDir:        cfg.PluginDir,
+		MemoryReserve:    cfg.MemoryReserve,
+		DeltaMaxBytes:    cfg.DeltaMaxBytes,
+		MemoryProbe:      supervisor.MemoryProbe(sup),
+		AutoIncrementGap: cfg.AutoIncrementGap,
+		CountDeclineKeys: cfg.CountMaxShadowed,
+		LookupBatch:      cfg.Source.LookupBatch,
 	})
+	app.UseSource(src)
 
-	cfg := mysqldriver.Config{
-		Addr:           env("VDB_LISTEN_ADDR", ":3306"),
-		DBName:         env("VDB_DB_NAME", "appdb"),
-		SourceDSN:      env("VDB_SOURCE_DSN", ""),
-		AuthSourceAddr: env("VDB_AUTH_SOURCE_ADDR", ""),
-	}
-
-	if certFile := os.Getenv("VDB_TLS_CERT_FILE"); certFile != "" {
-		keyFile := os.Getenv("VDB_TLS_KEY_FILE")
-		if keyFile == "" {
-			log.Fatal("vdb-mysql: VDB_TLS_CERT_FILE is set but VDB_TLS_KEY_FILE is not")
-		}
-		tlsCfg, err := loadTLS(certFile, keyFile)
-		if err != nil {
-			log.Fatalf("vdb-mysql: load TLS cert: %v", err)
-		}
-		cfg.TLSConfig = tlsCfg
-	}
-
-	driver := mysqldriver.NewDriver(cfg, app.DriverAPI())
-	app.UseDriver(driver)
+	api := app.DriverAPI()
+	srv := server.New(cfg, api, app, src, sup)
+	srv.Version = version
+	app.UseDriver(srv)
 
 	if err := app.Run(); err != nil {
-		log.Fatalf("vdb-mysql: %v", err)
+		slog.Error("vdb-mysql stopped", "pkg", "main", "err", err)
+		os.Exit(1)
 	}
 }
 
-// loadTLS loads a PEM-encoded certificate and private key and returns a
-// *tls.Config suitable for use as a server TLS configuration. The minimum
-// TLS version is set to 1.2 to match the MySQL wire protocol convention.
-func loadTLS(certFile, keyFile string) (*tls.Config, error) {
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return nil, err
+// setupLogging installs log/slog: JSON by default, text with VDB_LOG_FORMAT=text (D-82).
+func setupLogging(format string) {
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+	if os.Getenv("VDB_LOG_LEVEL") == "debug" {
+		opts.Level = slog.LevelDebug
 	}
-
-	pool, err := x509.SystemCertPool()
-	if err != nil {
-		// SystemCertPool fails on some minimal container images; start empty.
-		pool = x509.NewCertPool()
+	var h slog.Handler = slog.NewJSONHandler(os.Stderr, opts)
+	if format == "text" {
+		h = slog.NewTextHandler(os.Stderr, opts)
 	}
-
-	return &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		ClientCAs:    pool,
-		MinVersion:   tls.VersionTLS12,
-	}, nil
-}
-
-func env(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
+	slog.SetDefault(slog.New(h))
 }

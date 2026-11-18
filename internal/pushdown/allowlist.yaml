@@ -1,0 +1,5 @@
+# allowlist.yaml: operators and functions whose pushdown certification suite
+# is clean, per Source version prefix (implementation plan doc 10 §7,
+# doc 15 §5). Written by the pushdown certification suite in vdb-tests.
+# A version not listed allows only comparisons, IN, BETWEEN, IS NULL and LIKE.
+versions: {}

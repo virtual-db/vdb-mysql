@@ -1,0 +1,38 @@
+# my.cnf: written by vdb-mysql before each mysqld start (implementation plan
+# doc 02 §3). Do not edit: the data directory is rebuilt at every start.
+[mysqld]
+datadir = {{.Datadir}}
+socket = {{.Socket}}
+pid-file = {{.PidFile}}
+port = {{.Port}}
+bind-address = 0.0.0.0
+{{- if not .Networking}}
+skip-networking
+{{- end}}
+plugin-dir = {{.PluginDir}}
+plugin-load-add = vdb.so
+plugin-load-add = auth_socket.so
+vdb_mysql_storage_socket = {{.VdbSocket}}
+default_storage_engine = vdb_mysql_storage
+default_tmp_storage_engine = InnoDB
+optimizer_switch = mrr=on,mrr_cost_based=off,batched_key_access=on
+skip-log-bin
+event_scheduler = OFF
+innodb_buffer_pool_size = 32M
+sort_buffer_size = {{.SortBuffer}}
+join_buffer_size = {{.JoinBuffer}}
+tmp_table_size = {{.TmpTableSize}}
+temptable_max_ram = {{.TemptableMaxRAM}}
+max_connections = {{.MaxConnections}}
+tmpdir = {{.TmpDir}}
+secure_file_priv = {{.FilesDir}}
+mysql_native_password = ON
+local_infile = ON
+skip_name_resolve = ON
+partial_revokes = ON
+{{- if .ClientCert}}
+ssl_cert = {{.ClientCert}}
+ssl_key = {{.ClientKey}}
+{{- end}}
+log_error = stderr
+log_error_verbosity = 2
