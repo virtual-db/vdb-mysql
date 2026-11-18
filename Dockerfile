@@ -15,7 +15,16 @@ ARG BASE=oraclelinux:9-slim
 FROM golang:1.26.9 AS go
 WORKDIR /build
 COPY go.mod go.sum ./
-RUN go mod download
+# Private modules (vdb-core, dispatch, pipeline) are fetched with the build
+# secret gh_token when one is given: docker build --secret id=gh_token,env=TOKEN
+ENV GOPRIVATE=github.com/AnqorDX/*,github.com/virtual-db/*
+RUN --mount=type=secret,id=gh_token,required=false \
+    if [ -s /run/secrets/gh_token ]; then \
+      export GIT_CONFIG_COUNT=1 \
+        GIT_CONFIG_KEY_0="url.https://x-access-token:$(cat /run/secrets/gh_token)@github.com/.insteadOf" \
+        GIT_CONFIG_VALUE_0="https://github.com/"; \
+    fi; \
+    go mod download
 COPY . .
 ARG VERSION=dev
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /vdb-mysql .

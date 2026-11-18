@@ -1,0 +1,21 @@
+# integration.yml: runs VDB's Integration gate (vdb-tests: runner groups,
+# oracle, safety checker) on every pull request, with this repository at the
+# pull request's head and the other repositories at a branch of the same name
+# if one exists, otherwise at their default branch.
+name: Integration
+
+on:
+  pull_request:
+
+jobs:
+  integration:
+    name: Integration
+    permissions:
+      contents: read
+      packages: write
+    uses: virtual-db/vdb-tests/.github/workflows/integration.yml@main
+    with:
+      repository: vdb-mysql
+      ref: ${{ github.event.pull_request.head.sha }}
+      branch: ${{ github.head_ref }}
+    secrets: inherit

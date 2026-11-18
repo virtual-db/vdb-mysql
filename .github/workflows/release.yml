@@ -1,3 +1,13 @@
+# release.yml: the deploy pipeline. A tag vX.Y.Z runs CI, publishes a GitHub
+# release, then builds and pushes the environment image for both
+# architectures, release and debug variants:
+#   ghcr.io/virtual-db/vdb-mysql:vX.Y.Z           (+ vX.Y and latest for stable tags)
+#   ghcr.io/virtual-db/vdb-mysql:vX.Y.Z-debug
+# and the same tags on registry.vdbm.io when the VDBM_REGISTRY_TOKEN secret is set.
+#
+# The image embeds the vdb-mysql-plugins image pinned by PLUGINS_IMAGE in the
+# Dockerfile, so tag vdb-mysql-plugins first and pin its tag here before
+# tagging vdb-mysql.
 name: Release
 
 on:
@@ -6,26 +16,89 @@ on:
       - 'v*.*.*'
 
 env:
-  GONOSUMDB: github.com/AnqorDX/*,github.com/virtual-db/*
+  GHCR_IMAGE: ghcr.io/${{ github.repository }}
+  VDBM_IMAGE: registry.vdbm.io/${{ github.repository }}
 
 jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-      - name: Test
-        run: go test -race ./...
+  ci:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
 
   release:
     name: GitHub Release
-    needs: test
+    needs: ci
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      # The binary is no longer attached: vdb-mysql is useful only in the image (D-13).
       - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+
+  image:
+    name: Publish image
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      HAS_VDBM: ${{ secrets.VDBM_REGISTRY_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Pinned vdb-mysql-plugins image
+        id: plugins
+        run: echo "image=$(sed -n 's/^ARG PLUGINS_IMAGE=//p' Dockerfile)" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/login-action@v3
+        if: env.HAS_VDBM == 'true'
+        with:
+          registry: registry.vdbm.io
+          username: ${{ secrets.VDBM_REGISTRY_TOKEN }}
+          password: ${{ secrets.VDBM_REGISTRY_TOKEN }}
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Image names
+        id: names
+        run: |
+          if [ "$HAS_VDBM" = true ]; then printf 'images<<E\n%s\n%s\nE\n' "$GHCR_IMAGE" "$VDBM_IMAGE"; else printf 'images=%s\n' "$GHCR_IMAGE"; fi >> "$GITHUB_OUTPUT"
+      - name: Tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.names.outputs.images }}
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern=v{{major}}.{{minor}},enable=${{ !contains(github.ref_name, '-') }}
+            type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
+      - name: Release variant
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.GHCR_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.GHCR_IMAGE }}:buildcache,mode=max
+          build-args: |
+            VERSION=${{ github.ref_name }}
+          secrets: |
+            gh_token=${{ secrets.VDB_CI_TOKEN }}
+      - name: Debug variant
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.GHCR_IMAGE }}:${{ github.ref_name }}-debug
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            PLUGINS_IMAGE=${{ steps.plugins.outputs.image }}-debug
+          secrets: |
+            gh_token=${{ secrets.VDB_CI_TOKEN }}
