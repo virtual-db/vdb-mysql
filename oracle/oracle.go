@@ -20,6 +20,7 @@ package oracle
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"math/rand"
 	"os"
@@ -236,9 +237,17 @@ func openPair(env Env, s *Schema) (*pair, error) {
 	return &pair{vdb: v, ref: r}, nil
 }
 
+// close discards both connections instead of returning them to their pools:
+// a session may end with an open transaction, a snapshot, an isolation level
+// or settings the next seed must not inherit.
 func (p *pair) close() {
-	p.vdb.Close()
-	p.ref.Close()
+	discard(p.vdb)
+	discard(p.ref)
+}
+
+func discard(c *sql.Conn) {
+	_ = c.Raw(func(any) error { return driver.ErrBadConn })
+	c.Close()
 }
 
 // sourceStep applies a Source write or Source DDL to the Source and the
@@ -515,7 +524,7 @@ func dump(db *sql.DB, s *Schema, q string) []string {
 	if err != nil {
 		return nil
 	}
-	defer conn.Close()
+	defer discard(conn)
 	for _, x := range s.Settings() {
 		_, _ = conn.ExecContext(bg(), x)
 	}
@@ -533,7 +542,7 @@ func onConn(db *sql.DB, fn func(*sql.Conn) error) error {
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer discard(c)
 	for _, q := range baseSettings {
 		if _, err := c.ExecContext(bg(), q); err != nil {
 			return err
