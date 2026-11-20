@@ -1,7 +1,8 @@
 // Command oracle runs the oracle (plan doc 15 §3) against a running Source,
-// VDB and reference, then the safety checker over the Source's general log.
-// It exits 0 when there is no mismatch and the Source is untouched, 1 on a
-// mismatch or a safety finding, 2 when it cannot run.
+// VDB and reference: first every regression file, then every mode over the
+// seeds, then the safety checker over the Source's general log. It exits 0
+// when there is no mismatch and the Source is untouched, 1 on a mismatch or a
+// safety finding, 2 when it cannot run.
 package main
 
 import (
@@ -26,7 +27,12 @@ func main() {
 	vdbDSN := flag.String("vdb", env("ORACLE_VDB_DSN", "test_admin:testadmin@tcp(127.0.0.1:13306)/testdb?tls=skip-verify"), "VDB DSN")
 	refDSN := flag.String("reference", env("ORACLE_REFERENCE_DSN", "test_admin:testadmin@tcp(127.0.0.1:13308)/testdb"), "reference DSN")
 	generalLog := flag.String("general-log", env("ORACLE_GENERAL_LOG", ""), "the Source's general log, for the safety checker")
-	out := flag.String("out", "out", "directory for the report")
+	out := flag.String("out", "out", "directory for the report and new regression files")
+	modes := flag.String("modes", strings.Join(oracle.DefaultModes, ","), "modes: single, source, concurrency")
+	prepared := flag.Float64("prepared", 0.25, "share of statements run as prepared statements")
+	regressions := flag.String("regressions", "regressions", "directory of regression files to replay first")
+	replay := flag.String("replay", "", "replay one regression file and exit")
+	run := flag.String("run", "", "table-name run id (default: from the clock)")
 	flag.Parse()
 
 	list, err := seedList(*seeds, *seedsFile)
@@ -54,7 +60,33 @@ func main() {
 		WaitTables: func(prefix string) error {
 			return oracle.WaitTablesLike(source, vdb, prefix+"\\_%", 30*time.Second)
 		}}
-	rep, err := oracle.Run(env, list, *steps)
+	code := 0
+	runID := *run
+	if runID == "" {
+		runID = fmt.Sprintf("%x", time.Now().UnixNano()%0xfffffff)
+	}
+	files := []string{*replay}
+	if *replay == "" {
+		files, _ = filepath.Glob(filepath.Join(*regressions, "*.sql"))
+	}
+	for _, f := range files {
+		m, err := oracle.Replay(env, f, runID)
+		if err != nil {
+			fatal(fmt.Errorf("%s: %w", f, err))
+		}
+		if m != nil {
+			fmt.Printf("regression %s fails: step %d, %s differ\n  vdb:       %+v\n  reference: %+v\n", f, m.Step, m.What, m.VDB, m.Ref)
+			code = 1
+		} else {
+			fmt.Printf("regression %s passes\n", f)
+		}
+	}
+	if *replay != "" {
+		os.Exit(code)
+	}
+	cfg := oracle.Config{Run: runID, Steps: *steps, Modes: strings.Split(*modes, ","), Prepared: *prepared,
+		Regressions: filepath.Join(*out, "regressions")}
+	rep, err := oracle.RunWith(env, list, cfg)
 	if rep != nil {
 		fmt.Print(rep.String())
 		_ = os.MkdirAll(*out, 0o755)
@@ -63,7 +95,6 @@ func main() {
 	if err != nil {
 		fatal(err)
 	}
-	code := 0
 	if len(rep.Mismatches) > 0 {
 		code = 1
 	}
