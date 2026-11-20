@@ -184,10 +184,15 @@ func prefixFor(run string, mode string, seed int64, attempt int) string {
 // and waits until VDB sees them.
 func Seed(env Env, s *Schema) error {
 	for _, db := range []*sql.DB{env.Source, env.Reference} {
-		for _, q := range append(s.DDL(), s.Rows()...) {
-			if _, err := db.Exec(q); err != nil {
-				return fmt.Errorf("%s: %w", firstLine(q), err)
+		if err := onConn(db, func(c *sql.Conn) error {
+			for _, q := range append(s.DDL(), s.Rows()...) {
+				if _, err := c.ExecContext(bg(), q); err != nil {
+					return fmt.Errorf("%s: %w", firstLine(q), err)
+				}
 			}
+			return nil
+		}); err != nil {
+			return err
 		}
 	}
 	if env.WaitTables != nil {
@@ -239,8 +244,11 @@ func (p *pair) close() {
 // sourceStep applies a Source write or Source DDL to the Source and the
 // reference. Source DDL then waits until VDB shows the change.
 func sourceStep(env Env, s *Schema, st Step) error {
-	_, errS := env.Source.Exec(st.SQL)
-	_, errR := env.Reference.Exec(st.SQL)
+	exec := func(db *sql.DB) error {
+		return onConn(db, func(c *sql.Conn) error { _, err := c.ExecContext(bg(), st.SQL); return err })
+	}
+	errS := exec(env.Source)
+	errR := exec(env.Reference)
 	if (errS == nil) != (errR == nil) {
 		return fmt.Errorf("the Source and the reference disagree on %s: %v / %v", st.SQL, errS, errR)
 	}
@@ -512,4 +520,24 @@ func dump(db *sql.DB, s *Schema, q string) []string {
 		_, _ = conn.ExecContext(bg(), x)
 	}
 	return run(conn, Step{SQL: q, Kind: Read, Ordered: true}, nil).Rows
+}
+
+// baseSettings are the session settings the Source and the reference are
+// written with. Connections return to their pool with whatever a session set
+// (a seed's time_zone and sql_mode), so every borrowed connection sets these
+// first: TIMESTAMP literals then mean the same instant on both servers.
+var baseSettings = []string{"SET SESSION time_zone = '+00:00'", "SET SESSION sql_mode = DEFAULT"}
+
+func onConn(db *sql.DB, fn func(*sql.Conn) error) error {
+	c, err := db.Conn(bg())
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	for _, q := range baseSettings {
+		if _, err := c.ExecContext(bg(), q); err != nil {
+			return err
+		}
+	}
+	return fn(c)
 }

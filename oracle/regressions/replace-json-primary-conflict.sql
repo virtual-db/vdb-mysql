@@ -1,0 +1,4 @@
+-- vdb-mysql oracle regression: single / REPLACE INTO ORC_583A44B_I3_A _A / error
+-- seed: 3
+-- mode: single
+-- prepared: REPLACE INTO {p}_a (id, k, s, ci, l, n, t, ts, u, e, j, f) VALUES (544, 5, 'x1', 'Ünder3', 'm0', 801.50, '2026-02-03 00:00:00.000', '2026-04-01 08:00:00', NULL, 'z', '{"v": 13}', 79.5);
