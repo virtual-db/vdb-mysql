@@ -4,9 +4,13 @@ VDB for MySQL: a MySQL-compatible database environment over a read-only Source. 
 `mysqld` 8.4 that loads the VDB plug-ins (`vdb.so`, from `vdb-mysql-plugins`); every table merges the Source's rows
 with the environment's own changes, the Delta, kept in memory by `vdb-core`. The Source is never written.
 
-`vdb-mysql` is the Go process in the environment image: it supervises `mysqld`, serves the plug-ins over the plug-in
-protocol (`protocol/`), reads the Source through one service account over verified TLS, relays logins to the Source,
-mirrors its accounts and privileges, and rebuilds `mysqld`'s data directory at every start.
+This repository assembles VDB for MySQL and is the only one that publishes it (D-91):
+
+| Part | What it is |
+|---|---|
+| `main.go` | Wires `vdb-core` and `vdb-mysql-engine` (the engine: supervision, the plug-in protocol, the Source adapter, identity, discovery) |
+| `Dockerfile` | Builds MySQL 8.4 and `vdb.so` from source (`vdb-mysql-plugins` at a pinned ref) and `vdb-mysql`, into the image |
+| `oracle/` | The oracle and the safety checker; a tag runs them against the image it built, and publishes only if they pass |
 
 ## Run
 
@@ -23,15 +27,13 @@ readiness probe. Settings are in `docs/configuration.md`; the service account's 
 
 | Page | Covers |
 |---|---|
-| `docs/how-it-works.md` | Processes, the merge, transactions, logins, rebuilds |
 | `docs/installation.md` | The image, the service account and its grants |
 | `docs/configuration.md` | Every `VDB_*` setting |
 | `docs/tls.md` | TLS to the Source with nothing to set up; pinning a self-signed Source |
-| `docs/vdb-schema.md` | The `vdb` schema's tables |
-| `docs/pipelines-and-events.md`, `docs/plugins.md` | Extending VDB through `vdb-core` |
 | `docs/known-limitations.md` | What VDB does differently from InnoDB, and why |
 
 ## Development
 
-`make test`, `make lint`, `make proto` (regenerates `protocol/vdb.pb.go` in a container). Integration suites live in
+`make image-local` builds the image and the reference from `../vdb-mysql-plugins`; `make oracle` runs the oracle
+against them (`oracle/run.sh`). How the engine works is in `vdb-mysql-engine/docs/`. Detailed suites live in
 `vdb-tests`. Licence: Elastic License 2.0 (`LICENSE.md`).

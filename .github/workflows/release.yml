@@ -1,13 +1,9 @@
-# release.yml: the deploy pipeline. A tag vX.Y.Z runs CI, publishes a GitHub
-# release, then builds and pushes the environment image for both
-# architectures, release and debug variants:
-#   ghcr.io/virtual-db/vdb-mysql:vX.Y.Z           (+ vX.Y and latest for stable tags)
+# release.yml: the one release path (plan doc 14 §5, D-91). A tag vX.Y.Z builds
+# the image from source, runs the oracle against that exact image, and only if
+# it passes publishes it and a GitHub release:
+#   ghcr.io/virtual-db/vdb-mysql:vX.Y.Z   (+ vX.Y and latest for stable tags)
 #   ghcr.io/virtual-db/vdb-mysql:vX.Y.Z-debug
-# and the same tags on registry.vdbm.io when the VDBM_REGISTRY_TOKEN secret is set.
-#
-# The image embeds the vdb-mysql-plugins image pinned by PLUGINS_IMAGE in the
-# Dockerfile, so tag vdb-mysql-plugins first and pin its tag here before
-# tagging vdb-mysql.
+# and the same tags on registry.vdbm.io when VDBM_REGISTRY_TOKEN is set.
 name: Release
 
 on:
@@ -20,36 +16,48 @@ env:
   VDBM_IMAGE: registry.vdbm.io/${{ github.repository }}
 
 jobs:
-  ci:
-    uses: ./.github/workflows/ci.yml
-    secrets: inherit
-
-  release:
-    name: GitHub Release
-    needs: ci
+  oracle:
+    name: Oracle
     runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v6
+      - name: Free disk space for the mysqld build
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the image and the reference
+        run: |
+          docker buildx build . --target runtime --build-arg VARIANT=debug --build-arg VERSION=${{ github.ref_name }} \
+            --cache-from type=gha --cache-to type=gha,mode=max --load -t vdb-mysql:candidate
+          docker buildx build . --target reference --build-arg VARIANT=debug \
+            --cache-from type=gha --load -t vdb-mysql:reference
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: oracle/go.mod
+      - name: Oracle against the built image
+        working-directory: oracle
+        env:
+          VDB_IMAGE: vdb-mysql:candidate
+          REFERENCE_IMAGE: vdb-mysql:reference
+        run: ./run.sh -seeds-file seeds.txt
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with: { name: oracle-logs, path: oracle/out/, retention-days: 14 }
+
+  publish:
+    name: Publish
+    needs: oracle
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
     permissions:
       contents: write
-    steps:
-      - uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
-
-  image:
-    name: Publish image
-    needs: release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
       packages: write
     env:
       HAS_VDBM: ${{ secrets.VDBM_REGISTRY_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v6
-      - name: Pinned vdb-mysql-plugins image
-        id: plugins
-        run: echo "image=$(sed -n 's/^ARG PLUGINS_IMAGE=//p' Dockerfile)" >> "$GITHUB_OUTPUT"
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -80,25 +88,27 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          target: runtime
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.GHCR_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.GHCR_IMAGE }}:buildcache,mode=max
+          cache-from: type=gha
           build-args: |
             VERSION=${{ github.ref_name }}
-          secrets: |
-            gh_token=${{ secrets.VDB_CI_TOKEN }}
       - name: Debug variant
         uses: docker/build-push-action@v6
         with:
           context: .
+          target: runtime
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ env.GHCR_IMAGE }}:${{ github.ref_name }}-debug
+          cache-from: type=gha
           build-args: |
             VERSION=${{ github.ref_name }}
-            PLUGINS_IMAGE=${{ steps.plugins.outputs.image }}-debug
-          secrets: |
-            gh_token=${{ secrets.VDB_CI_TOKEN }}
+            VARIANT=debug
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

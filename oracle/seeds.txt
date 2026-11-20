@@ -1,0 +1,6 @@
+# The seeds the release runs (plan doc 15 §3).
+1
+2
+3
+4
+5

@@ -3,17 +3,15 @@ module github.com/virtual-db/vdb-mysql
 go 1.26.9
 
 require (
-	github.com/go-sql-driver/mysql v1.10.2
-	github.com/virtual-db/vdb-core v0.0.1-alpha-1.0.20261118034047-6831d1cf67a6
-	google.golang.org/protobuf v1.36.12
-	gopkg.in/yaml.v3 v3.0.1
-	vitess.io/vitess v0.24.5
+	github.com/virtual-db/vdb-core v0.0.1-alpha-1.0.20261120044027-88246e6d98cd
+	github.com/virtual-db/vdb-mysql-engine v0.0.0-20261120044202-2bdd84f57bc7
 )
 
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/AnqorDX/dispatch v0.0.1-alpha-1 // indirect
 	github.com/AnqorDX/pipeline v0.0.1-alpha-1 // indirect
+	github.com/go-sql-driver/mysql v1.10.2 // indirect
 	github.com/golang/glog v1.2.5 // indirect
 	github.com/lmittmann/tint v1.1.3 // indirect
 	github.com/mattn/go-isatty v0.0.21 // indirect
@@ -23,4 +21,7 @@ require (
 	golang.org/x/sys v0.43.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
 	google.golang.org/grpc v1.80.0 // indirect
+	google.golang.org/protobuf v1.36.12 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+	vitess.io/vitess v0.24.5 // indirect
 )

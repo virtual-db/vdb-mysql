@@ -1,0 +1,82 @@
+# compose.yml: the oracle's environment (plan doc 15 §2.1, §3).
+#
+#   certs      a test CA and source-db's certificate (VDB verifies the Source)
+#   source-db  stock MySQL 8.4, the Source, with the general log for the safety checker
+#   vdb        the image under test ($VDB_IMAGE)
+#   reference  the same mysqld without vdb.so ($REFERENCE_IMAGE): the InnoDB side
+#
+# run.sh starts it, runs the oracle from the host, and tears it down.
+services:
+  certs:
+    image: alpine:3.20
+    command: /gen.sh
+    volumes:
+      - ./source/gen-certs.sh:/gen.sh:ro
+      - certs:/certs
+
+  source-db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: testroot
+      MYSQL_DATABASE: testdb
+    command:
+      - --ssl-ca=/certs/ca.pem
+      - --ssl-cert=/certs/server-cert.pem
+      - --ssl-key=/certs/server-key.pem
+      - --general-log=ON
+      - --general-log-file=/var/log/source/general.log
+      - --log-output=FILE
+    ports:
+      - "13307:3306"
+    volumes:
+      - ./source/01-users.sql:/docker-entrypoint-initdb.d/01-users.sql:ro
+      - certs:/certs:ro
+      - ./out/source-log:/var/log/source
+    depends_on:
+      certs:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-ptestroot", "--silent"]
+      interval: 2s
+      timeout: 5s
+      retries: 90
+      start_period: 10s
+
+  vdb:
+    image: ${VDB_IMAGE:-vdb-mysql:dev}
+    environment:
+      VDB_SOURCE_HOST: source-db
+      VDB_SOURCE_PORT: "3306"
+      VDB_SOURCE_USER: vdb_svc
+      VDB_SOURCE_PASSWORD: vdbsvc
+      VDB_SOURCE_DATABASES: testdb
+      VDB_ENV_ID: vdb-oracle
+      VDB_LOG_FORMAT: text
+      VDB_SCHEMA_POLL: 1s
+    ports:
+      - "13306:3306"
+    volumes:
+      - certs:/usr/share/vdb/ca:ro
+    depends_on:
+      source-db:
+        condition: service_healthy
+    healthcheck:
+      # The port opens only when the environment is complete (D-52).
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/3306"]
+      interval: 3s
+      timeout: 5s
+      retries: 200
+      start_period: 10s
+
+  reference:
+    image: ${REFERENCE_IMAGE:-vdb-mysql:reference}
+    ports:
+      - "13308:3306"
+    healthcheck:
+      test: ["CMD", "/usr/local/mysql/bin/mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 2s
+      timeout: 5s
+      retries: 90
+
+volumes:
+  certs:

@@ -7,13 +7,13 @@
 
 ## What belongs here
 
-Everything MySQL-specific in Go: the plug-in protocol (`protocol/`, public), the Source adapter, pushdown,
-statistics, identity, discovery, schema polling, the supervisor and rebuild, the `vdb` schema. Database-agnostic logic
-(the Delta, merge, transactions, locks, foreign keys) belongs in `vdb-core`; C++ belongs in `vdb-mysql-plugins`.
+The assembly of VDB for MySQL: `main.go`, which only wires `vdb-core` and `vdb-mysql-engine`; the `Dockerfile`; the
+oracle and the safety checker (`oracle/`); the image releases. Engine code belongs in `vdb-mysql-engine`, the
+database-agnostic core in `vdb-core`, C++ in `vdb-mysql-plugins`.
 
 ## Rules
 
-- One package per concern under `internal/`; unit tests in `internal/<pkg>/tests/` need no database and no network.
+- `main.go` stays wiring only: configuration, `core.New`, `engine.NewDriver`, `UseDriver`, `Run`.
 - New direct dependencies need BMO's approval.
 - `log/slog` with the `pkg` field; never log a password or a row value.
-- `gofmt`, `go vet` and `go test -race ./...` are clean; `make proto` leaves no diff.
+- `gofmt` and `go vet` are clean; the oracle passes against the image (`make image-local oracle`).
