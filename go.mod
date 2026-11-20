@@ -3,8 +3,8 @@ module github.com/virtual-db/vdb-mysql
 go 1.26.9
 
 require (
-	github.com/virtual-db/vdb-core v0.0.1-alpha-1.0.20261120045514-a799631c246c
-	github.com/virtual-db/vdb-mysql-engine v0.0.0-20261120050024-eef427416789
+	github.com/virtual-db/vdb-core v0.0.1-alpha-1.0.20261120175959-4df5415ec4ad
+	github.com/virtual-db/vdb-mysql-engine v0.0.0-20261120180018-5bb35c85b477
 )
 
 require (
