@@ -1,15 +1,15 @@
-# release.yml: the one release path (plan doc 14 §5, D-91). A tag vX.Y.Z builds
-# the image from source, runs the oracle against that exact image, and only if
-# it passes publishes it and a GitHub release:
+# release.yml: the one release path (plan doc 14 §5, D-91). Tags are plain git
+# tags; publishing a GitHub release for a tag vX.Y.Z builds the image from
+# source, runs the oracle against that exact image, and only if it passes
+# publishes:
 #   ghcr.io/virtual-db/vdb-mysql:vX.Y.Z   (+ vX.Y and latest for stable tags)
 #   ghcr.io/virtual-db/vdb-mysql:vX.Y.Z-debug
 # and the same tags on registry.vdbm.io when VDBM_REGISTRY_TOKEN is set.
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  release:
+    types: [published]
 
 env:
   GHCR_IMAGE: ghcr.io/${{ github.repository }}
@@ -18,6 +18,7 @@ env:
 jobs:
   oracle:
     name: Oracle
+    if: startsWith(github.event.release.tag_name, 'v')
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
@@ -52,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
-      contents: write
+      contents: read
       packages: write
     env:
       HAS_VDBM: ${{ secrets.VDBM_REGISTRY_TOKEN != '' }}
@@ -108,7 +109,3 @@ jobs:
           build-args: |
             VERSION=${{ github.ref_name }}
             VARIANT=debug
-      - uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
