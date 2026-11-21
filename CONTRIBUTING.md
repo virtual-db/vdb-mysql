@@ -1,54 +1,19 @@
-# Contributing to mysql
+# Contributing to vdb-mysql
 
 > [!IMPORTANT]
 > ### Public Contributions Are Not Yet Open
 >
-> VirtualDB is not currently accepting public pull requests. We intend to open the project to community contributions in the future — when we do, this document will be updated accordingly.
->
-> **In the meantime, we encourage you to participate by [opening a GitHub Issue](https://github.com/virtual-db/mysql/issues).** Issues are the best way to report bugs, request features, ask questions, and start discussions with the team.
->
-> Thank you for your interest in VirtualDB.
+> VirtualDB is not currently accepting public pull requests. Please open an issue instead.
 
----
+## What belongs here
 
-## What This Repository Is
+The assembly of VDB for MySQL: `main.go`, which only wires `vdb-core` and `vdb-mysql-engine`; the `Dockerfile`; the
+oracle and the safety checker (`oracle/`); the image releases. Engine code belongs in `vdb-mysql-engine`, the
+database-agnostic core in `vdb-core`, C++ in `vdb-mysql-plugins`.
 
-`mysql` is the runnable server binary. It wires together `core` and `mysql-driver` into a deployable process. The logic for how data is intercepted and transformed lives in those two downstream modules, not here.
+## Rules
 
-Contributions to this repository are narrow in scope:
-
-- Changes to the `main.go` entry point (environment variable handling, startup wiring).
-- Dockerfile or CI workflow improvements.
-- Documentation corrections.
-
-If you want to contribute to query interception, row transformation, authentication, schema handling, the plugin protocol, or the delta layer, the correct repositories are:
-
-| Area | Repository |
-|---|---|
-| MySQL protocol, schema, rows, auth proxy | [mysql-driver](https://github.com/virtual-db/mysql-driver) |
-| Delta layer, plugin protocol, framework pipelines | [core](https://github.com/virtual-db/core) |
-| Integration test suite | [tests](https://github.com/virtual-db/tests) |
-
----
-
-## Reporting Bugs
-
-Open an issue. Include:
-
-- Go version and OS.
-- The MySQL source version you are connecting to.
-- The `vdb-mysql` binary version (from the release tag or `git describe`).
-- Relevant environment variable values (with credentials redacted).
-- Observed vs. expected behaviour, with any relevant log output.
-
----
-
-## Security Issues
-
-Do not open a public issue for security vulnerabilities. Email the maintainers directly. You will receive a response within 5 business days.
-
----
-
-## License
-
-Contributions will be licensed under the Elastic License 2.0. See [LICENSE.md](LICENSE.md).
+- `main.go` stays wiring only: configuration, `core.New`, `engine.NewDriver`, `UseDriver`, `Run`.
+- New direct dependencies need BMO's approval.
+- `log/slog` with the `pkg` field; never log a password or a row value.
+- `gofmt` and `go vet` are clean; the oracle passes against the image (`make image-local oracle`).

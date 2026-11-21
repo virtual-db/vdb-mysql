@@ -1,114 +1,28 @@
 # Installation
 
----
+Run the image `ghcr.io/virtual-db/vdb-mysql:<version>` with the Source settings of `configuration.md`. Mount a volume
+at `/var/lib/vdb/tmp` to size `mysqld`'s temporary space.
 
-## Pre-built Binary (linux/amd64)
+## The service account
 
-Linux/amd64 binaries are attached to every tagged release.
+VDB reads the Source with one account. It needs to read the exposed data and the grant tables, and nothing else:
 
-```sh
-curl -Lo vdb-mysql https://github.com/virtual-db/mysql/releases/latest/download/vdb-mysql-linux-amd64
-chmod +x vdb-mysql
-./vdb-mysql
+```sql
+CREATE USER 'vdb_svc'@'%' IDENTIFIED BY '...' REQUIRE SSL;
+GRANT SELECT, SHOW VIEW ON app.* TO 'vdb_svc'@'%';
+GRANT SELECT (User, Host, plugin, ssl_type, account_locked, password_expired, User_attributes, Process_priv,
+  Select_priv, Insert_priv, Update_priv, Delete_priv, Create_priv, Drop_priv, Alter_priv, Index_priv,
+  References_priv, Create_view_priv, Show_view_priv, Create_routine_priv, Alter_routine_priv, Execute_priv,
+  Trigger_priv, Create_tmp_table_priv, Lock_tables_priv) ON mysql.user TO 'vdb_svc'@'%';
+GRANT SELECT ON mysql.db TO 'vdb_svc'@'%';
+GRANT SELECT ON mysql.tables_priv TO 'vdb_svc'@'%';
+GRANT SELECT ON mysql.columns_priv TO 'vdb_svc'@'%';
+GRANT SELECT ON mysql.procs_priv TO 'vdb_svc'@'%';
+GRANT SELECT ON mysql.role_edges TO 'vdb_svc'@'%';
+GRANT SELECT ON mysql.default_roles TO 'vdb_svc'@'%';
+GRANT SELECT ON mysql.global_grants TO 'vdb_svc'@'%';
+GRANT SHOW_ROUTINE ON *.* TO 'vdb_svc'@'%';
 ```
 
-To pin to a specific version, replace `latest/download` with `download/v0.x.x`.
-
----
-
-## Docker
-
-Official multi-arch images (`linux/amd64`, `linux/arm64`) are published to the
-GitHub Container Registry on every release.
-
-### Pull the image
-
-```sh
-# Latest stable release
-docker pull ghcr.io/virtual-db/mysql:latest
-
-# Pin to a specific release
-docker pull ghcr.io/virtual-db/mysql:v0.0.1-alpha.3
-```
-
-### Run with Docker
-
-```sh
-docker run --rm \
-  -e VDB_SOURCE_DSN="vdb_user:secret@tcp(db.internal:3306)/myapp" \
-  -e VDB_AUTH_SOURCE_ADDR="db.internal:3306" \
-  -e VDB_DB_NAME="myapp" \
-  -p 3306:3306 \
-  ghcr.io/virtual-db/mysql:latest
-```
-
-### Docker Compose
-
-```yaml
-services:
-  vdb:
-    image: ghcr.io/virtual-db/mysql:latest
-    restart: unless-stopped
-    environment:
-      VDB_LISTEN_ADDR: ":3306"
-      VDB_DB_NAME: myapp
-      VDB_SOURCE_DSN: "vdb_user:secret@tcp(db.internal:3306)/myapp"
-      VDB_AUTH_SOURCE_ADDR: "db.internal:3306"
-    ports:
-      - "3306:3306"
-```
-
-```sh
-docker compose up -d
-```
-
-### Build the image locally
-
-If you need to build the image yourself (e.g. to test local changes):
-
-```sh
-git clone https://github.com/virtual-db/mysql
-cd mysql
-docker build -t vdb-mysql .
-```
-
----
-
-## Build From Source
-
-Requires Go 1.23.3 or later. All dependencies are published to the public Go
-module proxy — no private module access is required.
-
-```sh
-git clone https://github.com/virtual-db/mysql
-cd mysql
-CGO_ENABLED=0 go build -trimpath -o vdb-mysql .
-./vdb-mysql
-```
-
-To cross-compile for a different target:
-
-```sh
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o vdb-mysql-linux-amd64 .
-```
-
----
-
-## Requirements
-
-| Dependency | Version |
-|---|---|
-| Source database | MySQL 8.x |
-| Go (build from source only) | 1.23.3 or later |
-| Docker (container deployment) | 20.10 or later |
-| Network | vdb-mysql must have TCP access to the source MySQL server on the port in `VDB_SOURCE_DSN` and `VDB_AUTH_SOURCE_ADDR` |
-
----
-
-## Next Steps
-
-Once vdb-mysql is running, see:
-
-- [Configuration](./configuration.md) — environment variables and source database setup
-- [How It Works](./how-it-works.md) — architecture overview
-- [Plugins](./plugins.md) — extending vdb-mysql with plugins
+The password hash column of `mysql.user` is never granted and never read. Without the grant-table reads, VDB learns
+accounts at their first login instead (`vdb.accounts` says which mode is in use).
