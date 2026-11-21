@@ -28,10 +28,10 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/tidwall/btree v1.8.2 h1:mTY5iM4UTh2e80TG7RHDQQmnAY3xGNQA/DbU0olkhkA=
 github.com/tidwall/btree v1.8.2/go.mod h1:jBbTdUWhSZClZWoDg54VnvV7/54modSOzDN7VXftj1A=
-github.com/virtual-db/vdb-core v0.0.1-alpha-1.0.20261120185329-41098beea532 h1:Sjx+EFCyOF2eUenKFguVbDBtvWcudx8EYhN6KwEhl+w=
-github.com/virtual-db/vdb-core v0.0.1-alpha-1.0.20261120185329-41098beea532/go.mod h1:NxjVrhTfKJmOlJu5z3vLesGgijqJwHZqmnQ7FFCHIqk=
-github.com/virtual-db/vdb-mysql-engine v0.0.0-20261120192906-42d77fe9b918 h1:93cYY9zTdQArHFARoNu/Zt+zWUfXhTwHh6OvQyeFV5g=
-github.com/virtual-db/vdb-mysql-engine v0.0.0-20261120192906-42d77fe9b918/go.mod h1:MZYaaj+xUs120kNTVVTsMyV7aBW0t3KledHtfM3gPkk=
+github.com/virtual-db/vdb-core v0.1.0-alpha.1 h1:B8ZgQ7Xk11DEJg4VSgr1T4cXoDEetjgLfv5z4qxokD8=
+github.com/virtual-db/vdb-core v0.1.0-alpha.1/go.mod h1:NxjVrhTfKJmOlJu5z3vLesGgijqJwHZqmnQ7FFCHIqk=
+github.com/virtual-db/vdb-mysql-engine v0.1.0-alpha.1 h1:7shMzykgFx3sq5UHljU0eZnIc3oUSK690Zef6gL9Zxk=
+github.com/virtual-db/vdb-mysql-engine v0.1.0-alpha.1/go.mod h1:8ICT3SyG6LookSlR5o5WwBWqETO0DU6sDpuHmiyickg=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 golang.org/x/net v0.53.0 h1:d+qAbo5L0orcWAr0a9JweQpjXF19LMXJE8Ey7hwOdUA=
