@@ -80,13 +80,19 @@ jobs:
         run: ./run.sh -seeds-file seeds.txt
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
-        with: { name: oracle-logs-${{ matrix.arch }}, path: oracle/out/, retention-days: 14 }
+        with:
+          name: oracle-logs-${{ matrix.arch }}
+          path: oracle/out/
+          retention-days: 14
       - name: Record the tested digest
         run: |
           mkdir -p digests
           echo "${{ steps.build.outputs.digest }}" > digests/${{ matrix.arch }}
       - uses: actions/upload-artifact@v7
-        with: { name: digest-${{ matrix.arch }}, path: digests/, retention-days: 1 }
+        with:
+          name: digest-${{ matrix.arch }}
+          path: digests/
+          retention-days: 1
 
   publish:
     name: Publish
