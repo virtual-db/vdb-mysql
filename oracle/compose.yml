@@ -8,7 +8,7 @@
 # run.sh starts it, runs the oracle from the host, and tears it down.
 services:
   certs:
-    image: alpine:3.20
+    image: alpine:3.24
     command: /gen.sh
     volumes:
       - ./source/gen-certs.sh:/gen.sh:ro

@@ -12,13 +12,13 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Download each provider's published bundle
         run: |
           curl -fsSL -o ca/aws-rds.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
           curl -fsSL -o ca/gcp-cloudsql.pem https://pki.goog/roots.pem
           curl -fsSL -o ca/azure-mysql.pem https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/ca-bundles
           title: "chore: refresh managed cloud CA bundles"
