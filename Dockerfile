@@ -59,7 +59,7 @@ ARG VERSION=dev
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /vdb-mysql .
 
 FROM ${BASE} AS base
-RUN microdnf install -y libaio openssl-libs ncurses-libs numactl-libs ca-certificates tzdata shadow-utils procps-ng \
+RUN microdnf install -y libaio openssl-libs ncurses-libs numactl-libs libicu ca-certificates tzdata shadow-utils procps-ng \
     && microdnf clean all \
     && useradd -u 1000 -m -s /sbin/nologin vdb
 COPY --from=mysql /out/usr/local/mysql /usr/local/mysql

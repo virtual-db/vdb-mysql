@@ -6,6 +6,11 @@ name: CI
 on:
   pull_request:
 
+# A new push to a pull request cancels that pull request's run still in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 env:
   CACHE: ghcr.io/virtual-db/vdb-mysql-buildcache
 
