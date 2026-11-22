@@ -18,7 +18,7 @@
 # Build the debug variant with --build-arg VARIANT=debug.
 
 ARG BASE=oraclelinux:9-slim
-ARG PLUGINS_REF=v0.1.0-alpha.1
+ARG PLUGINS_REF=v0.1.0-alpha.2
 ARG MYSQL_RELEASE=8.4.11
 
 FROM ${BASE} AS toolchain

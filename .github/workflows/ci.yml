@@ -1,10 +1,9 @@
-# ci.yml: Lint, Test and Image on pull requests and on main (plan doc 14 §4).
+# ci.yml: Lint, Test and Image on pull requests (plan doc 14 §4). They do not
+# run again on the merge to main: main only receives pull requests that passed.
 # Lint and Test are the status checks main's branch protection requires.
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
 
 env:
@@ -61,7 +60,7 @@ jobs:
       - name: Build the image (no push)
         run: |
           to=()
-          if [ "${{ github.event_name }}" = push ] || [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
             to=(--cache-to "type=registry,ref=$CACHE:release-amd64,mode=max")
           fi
           docker buildx build . --target runtime --cache-from "type=registry,ref=$CACHE:release-amd64" "${to[@]}"

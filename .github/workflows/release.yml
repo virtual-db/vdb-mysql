@@ -9,7 +9,7 @@
 #
 # Build cache: ghcr.io/virtual-db/vdb-mysql-buildcache, one tag per build shape,
 # so builds never overwrite each other's cache:
-#   release-amd64  CI's Image check (written on main and same-repo PRs); the
+#   release-amd64  CI's Image check (written by same-repo PRs); the
 #                  oracle's candidate and the published amd64 image reuse it
 #   release        the published multi-arch image
 # Registry cache does not expire, so the mysqld build compiles once per
