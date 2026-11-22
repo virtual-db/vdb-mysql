@@ -20,7 +20,7 @@
 # Build the debug variant with --build-arg VARIANT=debug.
 
 ARG BASE=oraclelinux:10-slim
-ARG PLUGINS_REF=v0.1.0-alpha.2
+ARG PLUGINS_REF=v0.1.0-alpha.3
 ARG MYSQL_RELEASE=
 
 FROM scratch AS plugins-src
