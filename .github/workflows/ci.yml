@@ -7,6 +7,9 @@ on:
     branches: [main]
   pull_request:
 
+env:
+  CACHE: ghcr.io/virtual-db/vdb-mysql-buildcache
+
 jobs:
   lint:
     name: Lint
@@ -41,14 +44,24 @@ jobs:
     name: Image
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v3
-      - name: Build the image (no push)
-        uses: docker/build-push-action@v6
+      - uses: docker/login-action@v3
         with:
-          context: .
-          target: runtime
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # The build cache lives in GHCR (CACHE, see release.yml), not the Actions
+      # cache: it never expires, so the mysqld build, pinned by MYSQL_RELEASE and
+      # PLUGINS_REF, compiles once. Pull requests from forks only read it.
+      - name: Build the image (no push)
+        run: |
+          to=()
+          if [ "${{ github.event_name }}" = push ] || [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
+            to=(--cache-to "type=registry,ref=$CACHE:release-amd64,mode=max")
+          fi
+          docker buildx build . --target runtime --cache-from "type=registry,ref=$CACHE:release-amd64" "${to[@]}"

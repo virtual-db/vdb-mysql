@@ -5,6 +5,14 @@
 #   ghcr.io/virtual-db/vdb-mysql:vX.Y.Z   (+ vX.Y and latest for stable tags)
 #   ghcr.io/virtual-db/vdb-mysql:vX.Y.Z-debug
 # and the same tags on registry.vdbm.io when VDBM_REGISTRY_TOKEN is set.
+#
+# Build cache: ghcr.io/virtual-db/vdb-mysql-buildcache, one tag per build shape,
+# so builds never overwrite each other's cache:
+#   release-amd64  CI's Image check (written on main and same-repo PRs)
+#   debug-amd64    the oracle's candidate and reference
+#   release, debug the published multi-arch variants
+# Registry cache does not expire, so the mysqld build compiles once per
+# MYSQL_RELEASE / PLUGINS_REF / VARIANT / platform.
 name: Release
 
 on:
@@ -14,6 +22,7 @@ on:
 env:
   GHCR_IMAGE: ghcr.io/${{ github.repository }}
   VDBM_IMAGE: registry.vdbm.io/${{ github.repository }}
+  CACHE: ghcr.io/virtual-db/vdb-mysql-buildcache
 
 jobs:
   oracle:
@@ -21,6 +30,9 @@ jobs:
     if: startsWith(github.event.release.tag_name, 'v')
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v6
       - name: Free disk space for the mysqld build
@@ -28,12 +40,18 @@ jobs:
         with:
           tool-cache: true
       - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build the image and the reference
         run: |
           docker buildx build . --target runtime --build-arg VARIANT=debug --build-arg VERSION=${{ github.ref_name }} \
-            --cache-from type=gha --cache-to type=gha,mode=max --load -t vdb-mysql:candidate
+            --cache-from type=registry,ref=$CACHE:debug-amd64 --cache-to type=registry,ref=$CACHE:debug-amd64,mode=max \
+            --load -t vdb-mysql:candidate
           docker buildx build . --target reference --build-arg VARIANT=debug \
-            --cache-from type=gha --load -t vdb-mysql:reference
+            --cache-from type=registry,ref=$CACHE:debug-amd64 --load -t vdb-mysql:reference
       - uses: actions/setup-go@v5
         with:
           go-version-file: oracle/go.mod
@@ -94,7 +112,10 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
+          cache-from: |
+            type=registry,ref=${{ env.CACHE }}:release
+            type=registry,ref=${{ env.CACHE }}:release-amd64
+          cache-to: type=registry,ref=${{ env.CACHE }}:release,mode=max
           build-args: |
             VERSION=${{ github.ref_name }}
       - name: Debug variant
@@ -105,7 +126,10 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ env.GHCR_IMAGE }}:${{ github.ref_name }}-debug
-          cache-from: type=gha
+          cache-from: |
+            type=registry,ref=${{ env.CACHE }}:debug
+            type=registry,ref=${{ env.CACHE }}:debug-amd64
+          cache-to: type=registry,ref=${{ env.CACHE }}:debug,mode=max
           build-args: |
             VERSION=${{ github.ref_name }}
             VARIANT=debug
