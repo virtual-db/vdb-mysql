@@ -73,11 +73,16 @@ FROM base AS template
 COPY image/init-template.sql /tmp/init-template.sql
 RUN mkdir -p /usr/share/vdb && chown vdb /usr/share/vdb
 USER vdb
+# The template is created with the smallest redo log (8 MB, not the default
+# 100 MB of zeros); mysqld grows it to its configured capacity when it starts.
+# It is made read-only here, in the same layer: a chmod in a later layer would
+# store every file of it a second time.
 RUN /usr/local/mysql/bin/mysqld --no-defaults --initialize-insecure \
          --datadir=/usr/share/vdb/template --plugin-dir=/usr/local/mysql/lib/plugin \
          --plugin-load-add=auth_socket.so --init-file=/tmp/init-template.sql \
-         --log-error=/tmp/template.err \
-    || (cat /tmp/template.err; exit 1)
+         --innodb-redo-log-capacity=8M --log-error=/tmp/template.err \
+    || (cat /tmp/template.err; exit 1) \
+    && chmod -R a-w /usr/share/vdb/template
 
 FROM base AS reference
 COPY oracle/reference-entrypoint.sh /usr/local/bin/reference-entrypoint
@@ -92,8 +97,7 @@ COPY --from=template /usr/share/vdb/template /usr/share/vdb/template
 COPY ca/ /usr/share/vdb/ca/
 COPY --from=mysql /out/usr/local/mysql/share/vdb/ /usr/share/vdb/licenses/
 RUN mkdir -p /var/lib/vdb/mysql /var/lib/vdb/tmp /var/lib/vdb/files /var/lib/vdb/plugins /run/vdb /etc/vdb \
-    && chown -R vdb /var/lib/vdb /run/vdb \
-    && chmod -R a-w /usr/share/vdb/template
+    && chown -R vdb /var/lib/vdb /run/vdb
 ARG PLUGINS_REF
 LABEL org.opencontainers.image.title="VDB for MySQL" \
       org.opencontainers.image.description="A MySQL-compatible database environment over a read-only Source" \
