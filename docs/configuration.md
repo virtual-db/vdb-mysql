@@ -16,12 +16,11 @@ lower case without `VDB_`), then defaults. An invalid value stops start-up with 
 | `VDB_MEMORY_RESERVE` | 0.10 | Fraction of memory kept free; writes past it fail with 1114 |
 | `VDB_DELTA_MAX_BYTES` | 0 | A fixed cap on the Delta's size (0: none) |
 | `VDB_AUTO_INCREMENT_GAP` | 1000000 | Gap above the Source's AUTO_INCREMENT for new rows of mirrored tables |
-| `VDB_BATCH_ROWS`, `VDB_BATCH_BYTES` | 4096, 524288 | Rows and bytes per batch and per Source page |
+| `VDB_BATCH_ROWS`, `VDB_BATCH_BYTES` | 4096, 524288 | Rows and bytes per batch and per Source page (a page shrinks to about `VDB_BATCH_BYTES` from the table's average row size; a scan with a pushed condition reads at most `VDB_BATCH_ROWS` index entries per request) |
 | `VDB_INSERT_BATCH`, `VDB_LOOKUP_BATCH` | 1000, 1000 | Rows per bulk insert batch; keys per Source lookup |
 | `VDB_SOURCE_MAX_CONNECTIONS` | from the class | Snapshot connections to the Source |
 | `VDB_SOURCE_CONNECT_WAIT` | 5s | Wait for a Source connection |
 | `VDB_SOURCE_REQUEST_TIMEOUT` | 30s | `max_execution_time` of every Source statement |
-| `VDB_SOURCE_REQUEST_MAX_ROWS` | 100000 | Rows per Source request |
 | `VDB_MAX_SOURCE_ROWS` | 0 | Rows one statement may read from the Source (0: no limit) |
 | `VDB_SOURCE_RETRY_WINDOW` | 10s | Retries before a snapshot opens |
 | `VDB_SOURCE_SNAPSHOT` | `on` | `off` reads without a consistent snapshot |
