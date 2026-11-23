@@ -1,7 +1,54 @@
 # Installation
 
 Run the image `ghcr.io/virtual-db/vdb-mysql:<version>` with the Source settings of `configuration.md`. Mount a volume
-at `/var/lib/vdb/tmp` to size `mysqld`'s temporary space.
+at `/var/lib/vdb/tmp` to size `mysqld`'s temporary space (below).
+
+## Temporary space: `/var/lib/vdb/tmp`
+
+`mysqld` writes its temporary data to `/var/lib/vdb/tmp` (its `tmpdir`): sorts that do not fit in memory, internal
+temporary tables for `GROUP BY`, `DISTINCT`, `UNION` and derived tables, and the files of `ALTER TABLE`. This is
+MySQL's own behaviour, and VDB leaves it as is.
+
+The folder can grow to about the size of the rows one statement sorts or groups. On a large Source that can be large:
+an `ORDER BY` on a column without an index over a 50 GB table can write tens of GB here. It is emptied when the
+statement ends.
+
+Without a volume, the folder lives in the container's writable layer, on whatever disk Docker uses. Mount a volume
+there to choose the disk and its size. The image runs as user `vdb` (uid 1000), which must be able to write to it.
+
+Docker:
+
+```sh
+docker volume create vdb-tmp
+docker run -d --name vdb -p 3306:3306 \
+  -e VDB_SOURCE_HOST=db.example.com -e VDB_SOURCE_USER=vdb_svc -e VDB_SOURCE_PASSWORD_FILE=/run/secrets/vdb \
+  -v vdb-tmp:/var/lib/vdb/tmp \
+  ghcr.io/virtual-db/vdb-mysql:<version>
+```
+
+A host folder works too (`-v /mnt/fast-disk/vdb-tmp:/var/lib/vdb/tmp`), once `chown 1000 /mnt/fast-disk/vdb-tmp`.
+
+Compose:
+
+```yaml
+services:
+  vdb:
+    image: ghcr.io/virtual-db/vdb-mysql:<version>
+    ports: ["3306:3306"]
+    environment:
+      VDB_SOURCE_HOST: db.example.com
+      VDB_SOURCE_USER: vdb_svc
+      VDB_SOURCE_PASSWORD_FILE: /run/secrets/vdb
+    volumes:
+      - vdb-tmp:/var/lib/vdb/tmp
+volumes:
+  vdb-tmp:
+```
+
+When the disk is full, the statement that needs more space fails with MySQL's own error, for example
+`ERROR 1114 (HY000): The table '/var/lib/vdb/tmp/#sql...' is full` or `Errcode: 28 - No space left on device`.
+Other statements and the Delta are not affected. Give the volume more space, or add an index that lets the query
+avoid the sort.
 
 ## The service account
 
