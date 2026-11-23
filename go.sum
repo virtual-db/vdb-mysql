@@ -32,6 +32,10 @@ github.com/virtual-db/vdb-core v0.1.0-alpha.3 h1:4aEo17krB+nuo2KafVf2DCS3F49eEdN
 github.com/virtual-db/vdb-core v0.1.0-alpha.3/go.mod h1:hNb5o4woa8XtPRyvCcQh+1D8wc6BPfINd/SUdJ9fjqc=
 github.com/virtual-db/vdb-mysql-engine v0.1.0-alpha.3 h1:HjP4lh8r5vXBzCrrV5+H5H7JQn6aARceYvF9OAz3U/Y=
 github.com/virtual-db/vdb-mysql-engine v0.1.0-alpha.3/go.mod h1:tk492CT2QSaXq4BxL0A+K8qHb0sPFZNv+/65p5F3JPw=
+github.com/virtual-db/vdb-mysql-engine v0.1.0-alpha.3.0.20261123153704-b2dc6ffb2f25 h1:MbxBCzz0ZjXKjPruBuRmTk8lyPTUXPxSPA4GzEMdoEk=
+github.com/virtual-db/vdb-mysql-engine v0.1.0-alpha.3.0.20261123153704-b2dc6ffb2f25/go.mod h1:tk492CT2QSaXq4BxL0A+K8qHb0sPFZNv+/65p5F3JPw=
+github.com/virtual-db/vdb-mysql-engine v0.1.0-alpha.3.0.20261123153750-aa29d513fea7 h1:Jeo9ulwMZnQgAmFLu/CFDLAonTchX7qvLN2B+HrNT1g=
+github.com/virtual-db/vdb-mysql-engine v0.1.0-alpha.3.0.20261123153750-aa29d513fea7/go.mod h1:tk492CT2QSaXq4BxL0A+K8qHb0sPFZNv+/65p5F3JPw=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
 golang.org/x/net v0.60.0 h1:79p50tfZlm0J9YfoDsSi639qSXNGVwEzOPLCxM2FsYU=

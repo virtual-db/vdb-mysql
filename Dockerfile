@@ -12,6 +12,8 @@
 #                release or the plug-ins' build scripts change
 #   mysql        vdb.so built into that tree, installed into /usr/local/mysql
 #   go           the vdb-mysql binary (vdb-core and vdb-mysql-engine from go.mod)
+#   collations   fails the build unless the engine's proven.yaml covers the
+#                mysqld release (vdb-mysql check-collations)
 #   base         oraclelinux:10-slim with mysqld and the user vdb
 #   template     the template data directory with the control account
 #   reference    the same mysqld without vdb.so, for the oracle (doc 15 §3)
@@ -58,6 +60,14 @@ COPY main.go ./
 ARG VERSION=dev
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /vdb-mysql .
 
+# The image's mysqld release must have proven collations (vdb-mysql#23):
+# without them every non-binary string index reads whole tables. The
+# runtime stage copies /proven, so the published image cannot be built
+# when this fails.
+FROM go AS collations
+COPY --from=mysql /out/usr/local/mysql/share/vdb/release /tmp/release
+RUN /vdb-mysql check-collations "$(cat /tmp/release)" && touch /proven
+
 FROM ${BASE} AS base
 RUN microdnf install -y libaio openssl-libs ncurses-libs numactl-libs ca-certificates tzdata shadow-utils procps-ng \
     && microdnf clean all \
@@ -87,6 +97,7 @@ EXPOSE 3306
 ENTRYPOINT ["/usr/local/bin/reference-entrypoint"]
 
 FROM base AS runtime
+COPY --from=collations /proven /usr/share/vdb/collations-proven
 COPY --from=go /vdb-mysql /usr/local/bin/vdb-mysql
 COPY --from=template /usr/share/vdb/template /usr/share/vdb/template
 COPY ca/ /usr/share/vdb/ca/

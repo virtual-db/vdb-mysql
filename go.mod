@@ -4,7 +4,7 @@ go 1.27.4
 
 require (
 	github.com/virtual-db/vdb-core v0.1.0-alpha.3
-	github.com/virtual-db/vdb-mysql-engine v0.1.0-alpha.3
+	github.com/virtual-db/vdb-mysql-engine v0.1.0-alpha.3.0.20261123153750-aa29d513fea7
 )
 
 require (
